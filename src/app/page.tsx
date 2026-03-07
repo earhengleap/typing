@@ -300,7 +300,7 @@ const Keyboard = React.memo(({
     activeTheme: typeof THEMES.codex
 }) => {
     return (
-        <div className="flex flex-col gap-2 scale-[0.85] origin-top mt-4">
+        <div className="flex flex-col gap-2 origin-top mt-4">
             {KEYBOARD_ROWS.map((row, rowIndex) => (
                 <div key={rowIndex} className="flex justify-center gap-2">
                     {row.map((qwertyKey, charIndex) => {
