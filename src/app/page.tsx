@@ -65,38 +65,42 @@ const LEFT_SIDE_KEYS = new Set([
     'z', 'x', 'c', 'v', 'b'
 ]);
 
-const THEMES: Record<Theme, { bg: string, bgAlt: string, text: string, textDim: string, primary: string, error: string }> = {
+const THEMES: Record<Theme, { bg: string, bgAlt: string, text: string, textDim: string, primary: string, error: string, primaryRgb: string }> = {
     codex: {
         bg: "#323437",
         bgAlt: "#2c2e31",
         text: "#d1d0c5",
         textDim: "#646669",
         primary: "#e2b714",
-        error: "#ca4754"
+        error: "#ca4754",
+        primaryRgb: "226,183,20"
     },
     cyberpunk: {
         bg: "#10101a",
         bgAlt: "#1a1a2e",
         text: "#f0f0f0",
         textDim: "#4f4f6a",
-        primary: "#ff007f", // Neon pink
-        error: "#00f0ff"  // Neon cyan
+        primary: "#ff007f",
+        error: "#00f0ff",
+        primaryRgb: "255,0,127"
     },
     dracula: {
         bg: "#282a36",
         bgAlt: "#21222c",
         text: "#f8f8f2",
         textDim: "#6272a4",
-        primary: "#ff79c6", // Pink
-        error: "#ff5555"  // Red
+        primary: "#ff79c6",
+        error: "#ff5555",
+        primaryRgb: "255,121,198"
     },
     retro: {
         bg: "#e4dccb",
         bgAlt: "#d1c7b3",
         text: "#3c3836",
         textDim: "#928374",
-        primary: "#d65d0e", // Orange
-        error: "#cc241d"  // Red
+        primary: "#d65d0e",
+        error: "#cc241d",
+        primaryRgb: "214,93,14"
     }
 };
 
@@ -225,14 +229,16 @@ const Word = React.memo(({
     clusterIndexes,
     wordUserInput,
     wordTargetText,
-    charRefs
+    charRefs,
+    themeColors
 }: {
     group: number[],
     clusters: string[],
     clusterIndexes: number[],
     wordUserInput: string,
     wordTargetText: string,
-    charRefs: React.MutableRefObject<(HTMLSpanElement | null)[]>
+    charRefs: React.MutableRefObject<(HTMLSpanElement | null)[]>,
+    themeColors: { text: string, textDim: string, primary: string, error: string }
 }) => {
     return (
         <span className="inline-block whitespace-nowrap">
@@ -241,7 +247,8 @@ const Word = React.memo(({
                 const clusterInWordStart = clusterIndexes[i] - clusterIndexes[group[0]];
                 const clusterInWordEnd = clusterInWordStart + cluster.length;
 
-                let statusColor = "text-[var(--mt-text-dim)]";
+                // Default: untyped — dim color
+                let color = themeColors.textDim;
                 let underline = false;
 
                 if (wordUserInput.length > clusterInWordStart) {
@@ -249,10 +256,11 @@ const Word = React.memo(({
                     const targetPart = wordTargetText.substring(clusterInWordStart, Math.min(wordTargetText.length, clusterInWordStart + typedPart.length));
 
                     if (typedPart === targetPart) {
-                        if (wordUserInput.length >= clusterInWordEnd) statusColor = "text-[var(--mt-text)]";
-                        else statusColor = "text-[var(--mt-primary)]";
+                        // Correctly typed — bright text
+                        color = wordUserInput.length >= clusterInWordEnd ? themeColors.text : themeColors.primary;
                     } else {
-                        statusColor = "text-[var(--mt-error)]";
+                        // Incorrectly typed — error color with underline
+                        color = themeColors.error;
                         underline = true;
                     }
                 }
@@ -261,8 +269,11 @@ const Word = React.memo(({
                     <span
                         key={i}
                         ref={el => { charRefs.current[i] = el; }}
-                        className={cn("transition-colors duration-200", statusColor)}
-                        style={underline ? { borderBottom: '2px solid var(--mt-error)' } : {}}
+                        style={{
+                            color,
+                            transition: 'color 0.15s ease',
+                            borderBottom: underline ? `2px solid ${themeColors.error}` : 'none',
+                        }}
                     >
                         {cluster === " " ? "\u00A0" : cluster}
                     </span>
@@ -278,13 +289,15 @@ const Keyboard = React.memo(({
     errorKey,
     language,
     isShiftPressed,
-    nextKeyData
+    nextKeyData,
+    activeTheme
 }: {
     activeKeys: Set<string>,
     errorKey: string | null,
     language: Language,
     isShiftPressed: boolean,
-    nextKeyData: { key: string | null, needsShift: boolean }
+    nextKeyData: { key: string | null, needsShift: boolean },
+    activeTheme: typeof THEMES.codex
 }) => {
     return (
         <div className="flex flex-col gap-2 scale-[0.85] origin-top mt-4">
@@ -318,27 +331,29 @@ const Keyboard = React.memo(({
                             <motion.div
                                 key={`${qwertyKey}-${charIndex}`}
                                 animate={{
-                                    scale: isPressed ? 0.95 : 1,
-                                    backgroundColor: isPressed
-                                        ? (isErrorPress ? "var(--mt-error)" : "var(--mt-primary)")
-                                        : (isNext ? "rgba(var(--mt-primary-rgb), 0.15)" : "var(--mt-bg-alt)"),
-                                    borderColor: isPressed
-                                        ? (isErrorPress ? "var(--mt-error)" : "var(--mt-primary)")
-                                        : (isNext ? "var(--mt-primary)" : "rgba(255,255,255,0.05)"),
-                                    borderWidth: isNext ? "3px" : "2px",
-                                    color: isPressed
-                                        ? "var(--mt-bg)"
-                                        : (isNext ? "var(--mt-text)" : "var(--mt-text-dim)"),
-                                    boxShadow: isPressed
-                                        ? (isErrorPress ? "0px 0px 20px var(--mt-error)" : "0px 0px 20px var(--mt-primary)")
-                                        : (isNext ? "0px 0px 15px var(--mt-primary)" : "0px 4px 0px rgba(0,0,0,0.3)")
+                                    scale: isPressed ? 0.92 : 1,
+                                    y: isPressed ? 2 : 0,
                                 }}
-                                transition={{ type: "spring", stiffness: 600, damping: 25, mass: 0.5 }}
+                                transition={{ type: "spring", stiffness: 700, damping: 25, mass: 0.4 }}
                                 className={cn(
-                                    "h-11 px-3 flex items-center justify-center rounded-lg border-solid text-sm font-black relative overflow-hidden",
+                                    "h-11 px-3 flex items-center justify-center rounded-lg text-sm font-black relative overflow-hidden border-2 transition-all duration-100",
                                     qwertyKey === "space" ? "w-72 uppercase" : (isShiftKey ? "min-w-[80px]" : "min-w-11"),
                                     language === "khmer" ? "font-hanuman font-normal" : "uppercase"
                                 )}
+                                style={{
+                                    backgroundColor: isPressed
+                                        ? (isErrorPress ? activeTheme.error : activeTheme.primary)
+                                        : (isNext ? `rgba(${activeTheme.primaryRgb}, 0.12)` : activeTheme.bgAlt),
+                                    borderColor: isPressed
+                                        ? (isErrorPress ? activeTheme.error : activeTheme.primary)
+                                        : (isNext ? activeTheme.primary : 'rgba(255,255,255,0.06)'),
+                                    color: isPressed
+                                        ? activeTheme.bg
+                                        : (isNext ? activeTheme.text : activeTheme.textDim),
+                                    boxShadow: isPressed
+                                        ? `0 0 18px ${isErrorPress ? activeTheme.error : activeTheme.primary}60`
+                                        : (isNext ? `0 0 12px ${activeTheme.primary}40` : '0 3px 0 rgba(0,0,0,0.25)'),
+                                }}
                             >
                                 {qwertyKey !== "space" ? (
                                     language === "khmer" && mapping ? (
@@ -1196,6 +1211,7 @@ export default function MonkeyTypePage() {
                                                 wordUserInput={wordUserInput}
                                                 wordTargetText={wordTargetText}
                                                 charRefs={charRefs}
+                                                themeColors={activeTheme}
                                             />
                                         );
                                     })}
@@ -1265,6 +1281,7 @@ export default function MonkeyTypePage() {
                                         language={language}
                                         isShiftPressed={isShiftPressed}
                                         nextKeyData={{ key: nextKey, needsShift }}
+                                        activeTheme={activeTheme}
                                     />
                                 );
                             })()}
