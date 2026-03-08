@@ -68,7 +68,7 @@ export async function registerUser(formData: FormData) {
     const validatedFields = RegisterSchema.safeParse({ name, email, password });
 
     if (!validatedFields.success) {
-        return { error: validatedFields.error.errors[0].message };
+        return { error: validatedFields.error.issues[0].message };
     }
 
     try {
