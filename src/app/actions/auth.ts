@@ -10,6 +10,7 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const baseUrl = process.env.AUTH_URL || "http://localhost:3000";
+const emailFrom = process.env.EMAIL_FROM || "TypeFlow <onboarding@resend.dev>";
 
 // --- Email Template Components ---
 const EMAIL_STYLES = {
@@ -113,7 +114,7 @@ export async function registerUser(formData: FormData) {
             `;
 
             await resend.emails.send({
-                from: "TypeFlow <onboarding@resend.dev>",
+                from: emailFrom,
                 to: email,
                 subject: "welcome to typeflow.",
                 html: getEmailWrapper(welcomeContent),
@@ -175,7 +176,7 @@ export async function forgotPassword(formData: FormData) {
             `;
 
             await resend.emails.send({
-                from: "TypeFlow <onboarding@resend.dev>",
+                from: emailFrom,
                 to: email,
                 subject: "reset your password - typeflow.",
                 html: getEmailWrapper(resetContent),
