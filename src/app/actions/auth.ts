@@ -6,22 +6,53 @@ import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import crypto from "crypto";
-import nodemailer from "nodemailer";
 import { after } from "next/server";
 
-// Configure Nodemailer with Gmail SMTP
-const transporter = process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD
-    ? nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-            user: process.env.GMAIL_USER,
-            pass: process.env.GMAIL_APP_PASSWORD,
-        },
-    })
-    : null;
+// Brevo API Configuration
+const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
 
 const baseUrl = (process.env.AUTH_URL || "http://localhost:3000").replace(/\/$/, "");
-const emailFrom = process.env.EMAIL_FROM || `"TypeFlow" <${process.env.GMAIL_USER}>`;
+
+// Professional Sender Configuration (Can be changed in Vercel settings)
+const sender = {
+    name: process.env.EMAIL_FROM_NAME || "TypeFlow",
+    email: process.env.EMAIL_FROM_EMAIL || "noreply@typeflow.app"
+};
+
+/**
+ * Optimized background email sender using Brevo API
+ */
+async function sendEmail({ to, subject, html }: { to: string, subject: string, html: string }) {
+    if (!BREVO_API_KEY) {
+        console.warn("[AUTH] BREVO_API_KEY missing. Skipping email.");
+        return;
+    }
+
+    try {
+        const response = await fetch(BREVO_API_URL, {
+            method: "POST",
+            headers: {
+                "accept": "application/json",
+                "api-key": BREVO_API_KEY,
+                "content-type": "application/json"
+            },
+            body: JSON.stringify({
+                sender,
+                to: [{ email: to }],
+                subject,
+                htmlContent: html
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(JSON.stringify(errorData));
+        }
+    } catch (error) {
+        console.error("[AUTH] Brevo Email Error:", error);
+    }
+}
 
 // --- Email Template Components ---
 const EMAIL_STYLES = {
@@ -109,33 +140,24 @@ export async function registerUser(formData: FormData) {
         });
 
         // Send Welcome Email in background
-        if (transporter) {
-            after(async () => {
-                try {
-                    const welcomeContent = `
-                        <h2 style="color: ${EMAIL_STYLES.text}; font-size: 20px; margin-bottom: 20px;">welcome to the club, ${name}</h2>
-                        <p style="color: ${EMAIL_STYLES.textDim}; margin-bottom: 30px;">your account is ready. see how fast you can flow.</p>
-                        
-                        <div style="text-align: center; margin: 30px 0;">
-                            <a href="${baseUrl}/login" style="background-color: ${EMAIL_STYLES.primary}; color: ${EMAIL_STYLES.bg}; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px; display: inline-block;">
-                                launch typeflow
-                            </a>
-                        </div>
-                    `;
+        after(async () => {
+            const welcomeContent = `
+                <h2 style="color: ${EMAIL_STYLES.text}; font-size: 20px; margin-bottom: 20px;">welcome to the club, ${name}</h2>
+                <p style="color: ${EMAIL_STYLES.textDim}; margin-bottom: 30px;">your account is ready. see how fast you can flow.</p>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="${baseUrl}/login" style="background-color: ${EMAIL_STYLES.primary}; color: ${EMAIL_STYLES.bg}; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px; display: inline-block;">
+                        launch typeflow
+                    </a>
+                </div>
+            `;
 
-                    await transporter.sendMail({
-                        from: emailFrom,
-                        to: email,
-                        subject: "welcome to typeflow.",
-                        html: getEmailWrapper(welcomeContent),
-                    });
-                } catch (emailError) {
-                    console.error("Background Welcome Email failed:", emailError);
-                }
+            await sendEmail({
+                to: email,
+                subject: "welcome to typeflow.",
+                html: getEmailWrapper(welcomeContent),
             });
-        } else {
-            console.warn("[AUTH] Nodemailer config missing, skipping welcome email.");
-        }
+        });
 
         return { success: "Account created! You can now sign in." };
     } catch (error) {
@@ -170,37 +192,28 @@ export async function forgotPassword(formData: FormData) {
         // Send Password Reset Email in background
         const resetUrl = `${baseUrl}/reset-password?token=${token}`;
 
-        if (transporter) {
-            after(async () => {
-                try {
-                    const resetContent = `
-                        <h2 style="color: ${EMAIL_STYLES.text}; font-size: 20px; margin-bottom: 20px;">forgot your password?</h2>
-                        <p style="color: ${EMAIL_STYLES.textDim}; margin-bottom: 30px;">we received a request to reset your password. click below to choose a new one.</p>
-                        
-                        <div style="text-align: center; margin: 30px 0;">
-                            <a href="${resetUrl}" style="background-color: ${EMAIL_STYLES.primary}; color: ${EMAIL_STYLES.bg}; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px; display: inline-block;">
-                                reset password
-                            </a>
-                        </div>
-                        
-                        <div style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.1); border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
-                            <p style="color: ${EMAIL_STYLES.primary}; font-size: 11px; word-break: break-all; margin: 0;">${resetUrl}</p>
-                        </div>
-                    `;
+        after(async () => {
+            const resetContent = `
+                <h2 style="color: ${EMAIL_STYLES.text}; font-size: 20px; margin-bottom: 20px;">forgot your password?</h2>
+                <p style="color: ${EMAIL_STYLES.textDim}; margin-bottom: 30px;">we received a request to reset your password. click below to choose a new one.</p>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="${resetUrl}" style="background-color: ${EMAIL_STYLES.primary}; color: ${EMAIL_STYLES.bg}; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px; display: inline-block;">
+                        reset password
+                    </a>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.1); border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
+                    <p style="color: ${EMAIL_STYLES.primary}; font-size: 11px; word-break: break-all; margin: 0;">${resetUrl}</p>
+                </div>
+            `;
 
-                    await transporter.sendMail({
-                        from: emailFrom,
-                        to: email,
-                        subject: "reset your password - typeflow.",
-                        html: getEmailWrapper(resetContent),
-                    });
-                } catch (emailError) {
-                    console.error("Background Reset Email failed:", emailError);
-                }
+            await sendEmail({
+                to: email,
+                subject: "reset your password - typeflow.",
+                html: getEmailWrapper(resetContent),
             });
-        } else {
-            console.warn("[AUTH] Nodemailer config missing, reset link: ", resetUrl);
-        }
+        });
 
         return { success: "If an account exists with this email, a reset link will be sent." };
     } catch (error) {
