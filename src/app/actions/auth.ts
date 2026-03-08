@@ -9,6 +9,45 @@ import crypto from "crypto";
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+const baseUrl = process.env.AUTH_URL || "http://localhost:3000";
+
+// --- Email Template Components ---
+const EMAIL_STYLES = {
+    bg: "#323437",
+    bgAlt: "#2c2e31",
+    primary: "#e2b714",
+    text: "#d1d0c5",
+    textDim: "#646669",
+    font: "'JetBrains Mono', 'Roboto Mono', monospace",
+};
+
+const getEmailWrapper = (content: string) => `
+    <div style="background-color: ${EMAIL_STYLES.bg}; color: ${EMAIL_STYLES.text}; font-family: ${EMAIL_STYLES.font}; padding: 40px 20px; line-height: 1.5;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: ${EMAIL_STYLES.bgAlt}; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            <!-- Header -->
+            <div style="padding: 30px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <div style="font-size: 28px; font-weight: 800; letter-spacing: -1px;">
+                    typeflow<span style="color: ${EMAIL_STYLES.primary};">.</span>
+                </div>
+            </div>
+            
+            <!-- Body -->
+            <div style="padding: 40px 30px;">
+                ${content}
+            </div>
+            
+            <!-- Footer -->
+            <div style="padding: 30px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); background-color: rgba(0,0,0,0.1);">
+                <div style="color: ${EMAIL_STYLES.textDim}; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">
+                    typed with <span style="color: ${EMAIL_STYLES.primary};">♥</span> by typeflow &copy; 2026
+                </div>
+                <div style="margin-top: 10px;">
+                    <a href="${baseUrl}" style="color: ${EMAIL_STYLES.primary}; text-decoration: none; font-size: 12px; opacity: 0.8;">visit website</a>
+                </div>
+            </div>
+        </div>
+    </div>
+`;
 
 const RegisterSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters"),
@@ -59,25 +98,28 @@ export async function registerUser(formData: FormData) {
 
         // Send Welcome Email
         try {
+            const welcomeContent = `
+                <h2 style="color: ${EMAIL_STYLES.text}; font-size: 20px; margin-bottom: 20px;">welcome to the club, ${name}</h2>
+                <p style="color: ${EMAIL_STYLES.textDim}; margin-bottom: 30px;">your account is ready. it's time to see how fast you can really flow. track your wpm, accuracy, and history across all your devices.</p>
+                
+                <div style="text-align: center; margin: 40px 0;">
+                    <a href="${baseUrl}/login" style="background-color: ${EMAIL_STYLES.primary}; color: ${EMAIL_STYLES.bg}; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px; text-transform: lowercase; transition: all 0.2s;">
+                        launch typeflow
+                    </a>
+                </div>
+                
+                <p style="color: ${EMAIL_STYLES.textDim}; font-size: 13px; margin-top: 40px;">stay fast,</p>
+                <p style="color: ${EMAIL_STYLES.text}; font-size: 13px;">the typeflow team</p>
+            `;
+
             await resend.emails.send({
                 from: "TypeFlow <onboarding@resend.dev>",
                 to: email,
-                subject: "Welcome to TypeFlow!",
-                html: `
-                    <div style="font-family: monospace; color: #d1d0c5; background-color: #323437; padding: 40px; border-radius: 20px;">
-                        <h1 style="color: #e2b714; font-size: 24px; border-bottom: 2px solid #e2b714; padding-bottom: 10px;">Welcome to TypeFlow, ${name}!</h1>
-                        <p style="font-size: 16px; line-height: 1.6;">Your account has been successfully created. You can now start tracking your typing speed, accuracy, and history across all your devices.</p>
-                        <div style="margin: 30px 0;">
-                            <a href="${process.env.AUTH_URL || 'http://localhost:3000'}/login" style="background-color: #e2b714; color: #323437; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">Sign In Now</a>
-                        </div>
-                        <p style="font-size: 12px; opacity: 0.6; margin-top: 40px;">If you didn't create this account, please ignore this email.</p>
-                        <p style="font-size: 10px; opacity: 0.4;">TypeFlow &copy; 2026</p>
-                    </div>
-                `,
+                subject: "welcome to typeflow.",
+                html: getEmailWrapper(welcomeContent),
             });
         } catch (emailError) {
             console.error("Failed to send welcome email:", emailError);
-            // We don't return an error here because the account WAS created successfully
         }
 
         return { success: "Account created! You can now sign in." };
@@ -111,30 +153,35 @@ export async function forgotPassword(formData: FormData) {
         });
 
         // Send Password Reset Email
-        const resetUrl = `${process.env.AUTH_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
+        const resetUrl = `${baseUrl}/reset-password?token=${token}`;
 
         try {
+            const resetContent = `
+                <h2 style="color: ${EMAIL_STYLES.text}; font-size: 20px; margin-bottom: 20px;">forgot your password?</h2>
+                <p style="color: ${EMAIL_STYLES.textDim}; margin-bottom: 30px;">we received a request to reset your password. if you didn't make this request, you can safely ignore this email.</p>
+                
+                <div style="text-align: center; margin: 40px 0;">
+                    <a href="${resetUrl}" style="background-color: ${EMAIL_STYLES.primary}; color: ${EMAIL_STYLES.bg}; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px; text-transform: lowercase;">
+                        reset password
+                    </a>
+                </div>
+                
+                <div style="margin-top: 30px; padding: 20px; background-color: rgba(0,0,0,0.15); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                    <p style="color: ${EMAIL_STYLES.textDim}; font-size: 12px; margin-bottom: 10px;">or copy and paste this link:</p>
+                    <p style="color: ${EMAIL_STYLES.primary}; font-size: 11px; word-break: break-all; margin: 0;">${resetUrl}</p>
+                </div>
+                
+                <p style="color: ${EMAIL_STYLES.textDim}; font-size: 11px; margin-top: 40px;">note: this link will expire in 1 hour.</p>
+            `;
+
             await resend.emails.send({
                 from: "TypeFlow <onboarding@resend.dev>",
                 to: email,
-                subject: "Reset Your Password - TypeFlow",
-                html: `
-                    <div style="font-family: monospace; color: #d1d0c5; background-color: #323437; padding: 40px; border-radius: 20px;">
-                        <h1 style="color: #e2b714; font-size: 24px; border-bottom: 2px solid #e2b714; padding-bottom: 10px;">Password Reset Request</h1>
-                        <p style="font-size: 16px; line-height: 1.6;">We received a request to reset your password. Click the button below to choose a new one. This link will expire in 1 hour.</p>
-                        <div style="margin: 30px 0;">
-                            <a href="${resetUrl}" style="background-color: #e2b714; color: #323437; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">Reset Password</a>
-                        </div>
-                        <p style="font-size: 14px; opacity: 0.8;">Or copy and paste this link into your browser:</p>
-                        <p style="font-size: 12px; color: #e2b714; word-break: break-all;">${resetUrl}</p>
-                        <p style="font-size: 12px; opacity: 0.6; margin-top: 40px;">If you didn't request a password reset, you can safely ignore this email.</p>
-                        <p style="font-size: 10px; opacity: 0.4;">TypeFlow &copy; 2026</p>
-                    </div>
-                `,
+                subject: "reset your password - typeflow.",
+                html: getEmailWrapper(resetContent),
             });
         } catch (emailError) {
             console.error("Failed to send reset email:", emailError);
-            // Log it but still return generic success for security
         }
 
         return { success: "If an account exists with this email, a reset link will be sent." };
