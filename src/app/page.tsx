@@ -8,6 +8,8 @@ import { useMonkeyTypeStore, GameMode, GameConfig, Language, Theme, ChartPoint }
 import { THEMES } from "@/constants/themes";
 import { UserMenu } from "@/components/UserMenu";
 import { saveTypingResult } from "@/app/actions/typing-results";
+import { saveLeaderboardResult } from "@/app/actions/leaderboard";
+import { Leaderboard } from "@/components/Leaderboard";
 
 const WORD_POOL = [
     "function", "variable", "constant", "component", "interface", "generic", "promise", "async", "await", "callback",
@@ -520,6 +522,11 @@ export default function MonkeyTypePage() {
             language,
             theme
         });
+
+        // Save to Global Leaderboard (Redis)
+        if (stats.wpm > 0) {
+            saveLeaderboardResult(stats.wpm);
+        }
     };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1546,6 +1553,7 @@ export default function MonkeyTypePage() {
                 )}
             </AnimatePresence >
 
+            <Leaderboard theme={activeTheme} />
             <div className="fixed bottom-3 sm:bottom-6 right-3 sm:right-6 text-[8px] sm:text-[10px] font-bold tracking-[0.3em] uppercase opacity-20 pointer-events-none" style={{ color: activeTheme.textDim }}>
                 TypeFlow 1.0
             </div>
