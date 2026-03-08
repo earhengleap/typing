@@ -11,17 +11,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         sessionsTable: sessions,
         verificationTokensTable: verificationTokens,
     }),
-    session: { strategy: "jwt" },
+    session: {
+        strategy: "database", // Use database sessions for more reliability with Neon
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+        updateAge: 24 * 60 * 60, // 24 hours
+    },
     callbacks: {
-        jwt({ token, user }) {
-            if (user) {
-                token.id = user.id;
-            }
-            return token;
-        },
-        session({ session, token }) {
-            if (session.user && token.id) {
-                session.user.id = token.id as string;
+        session({ session, user }) {
+            if (session.user && user.id) {
+                session.user.id = user.id;
             }
             return session;
         },
