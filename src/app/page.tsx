@@ -5,6 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { RotateCcw, Timer, Keyboard as KeyboardIcon, Type, Globe, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMonkeyTypeStore, GameMode, GameConfig, Language, Theme, ChartPoint } from "@/hooks/use-monkeytype-store";
+import { THEMES } from "@/constants/themes";
+import { UserMenu } from "@/components/UserMenu";
+import { saveTypingResult } from "@/app/actions/typing-results";
 
 const WORD_POOL = [
     "function", "variable", "constant", "component", "interface", "generic", "promise", "async", "await", "callback",
@@ -82,80 +85,7 @@ const LEFT_SIDE_KEYS = new Set([
     'z', 'x', 'c', 'v', 'b'
 ]);
 
-const THEMES: Record<Theme, { bg: string, bgAlt: string, text: string, textDim: string, primary: string, error: string, primaryRgb: string }> = {
-    codex: {
-        bg: "#323437",
-        bgAlt: "#2c2e31",
-        text: "#d1d0c5",
-        textDim: "#646669",
-        primary: "#e2b714",
-        error: "#ca4754",
-        primaryRgb: "226,183,20"
-    },
-    cyberpunk: {
-        bg: "#10101a",
-        bgAlt: "#1a1a2e",
-        text: "#f0f0f0",
-        textDim: "#4f4f6a",
-        primary: "#ff007f",
-        error: "#00f0ff",
-        primaryRgb: "255,0,127"
-    },
-    dracula: {
-        bg: "#282a36",
-        bgAlt: "#21222c",
-        text: "#f8f8f2",
-        textDim: "#6272a4",
-        primary: "#ff79c6",
-        error: "#ff5555",
-        primaryRgb: "255,121,198"
-    },
-    retro: {
-        bg: "#e4dccb",
-        bgAlt: "#d1c7b3",
-        text: "#3c3836",
-        textDim: "#928374",
-        primary: "#d65d0e",
-        error: "#cc241d",
-        primaryRgb: "214,93,14"
-    },
-    nord: {
-        bg: "#2e3440",
-        bgAlt: "#3b4252",
-        text: "#eceff4",
-        textDim: "#4c566a",
-        primary: "#88c0d0",
-        error: "#bf616a",
-        primaryRgb: "136,192,208"
-    },
-    monokai: {
-        bg: "#272822",
-        bgAlt: "#1e1f1c",
-        text: "#f8f8f2",
-        textDim: "#75715e",
-        primary: "#a6e22e",
-        error: "#f92672",
-        primaryRgb: "166,226,46"
-    },
-    solarized: {
-        bg: "#002b36",
-        bgAlt: "#073642",
-        text: "#839496",
-        textDim: "#586e75",
-        primary: "#b58900",
-        error: "#dc322f",
-        primaryRgb: "181,137,0"
-    },
-    tokyonight: {
-        bg: "#1a1b26",
-        bgAlt: "#24283b",
-        text: "#c0caf5",
-        textDim: "#565f89",
-        primary: "#7aa2f7",
-        error: "#f7768e",
-        primaryRgb: "122,162,247"
-    }
-};
+// THEMES config imported from @/constants/themes
 
 // --- Performance Chart Component ---
 const PerformanceChart = React.memo(({ data, theme }: { data: ChartPoint[], theme: typeof THEMES.codex }) => {
@@ -989,7 +919,7 @@ export default function MonkeyTypePage() {
         <div
             className={cn(
                 "min-h-screen min-h-[100dvh] w-full flex flex-col items-center justify-start select-none theme-transition",
-                "pt-6 sm:pt-10 md:pt-16 px-[var(--content-px)]",
+                "pt-2 sm:pt-4 md:pt-8 px-[var(--content-px)]",
                 language === "khmer" ? "font-sans font-medium" : "font-mono"
             )}
             onClick={() => inputRef.current?.focus()}
@@ -1004,6 +934,23 @@ export default function MonkeyTypePage() {
                 '--mt-error': activeTheme.error,
             } as React.CSSProperties}
         >
+            {/* Header / Nav */}
+            <header className="relative w-full max-w-5xl mx-auto flex items-center pt-4 pb-2 z-10 px-4 md:px-0 mb-4">
+                <div className="flex w-full items-center">
+                    <div className="flex items-center gap-2 group flex-1">
+                        <Type className="w-8 h-8 transition-transform group-hover:scale-110" style={{ color: activeTheme.primary }} />
+                        <h1 className="text-[32px] tracking-tight font-bold ml-1 relative" style={{ color: activeTheme.textDim }}>
+                            <span style={{ color: activeTheme.text }}>type</span>flow
+                        </h1>
+                    </div>
+
+                    <div className="flex-1" />
+
+                    <div className="flex items-center gap-1 sm:gap-2 justify-end flex-1 z-20">
+                        <UserMenu />
+                    </div>
+                </div>
+            </header>
 
             {/* Local Command Palette */}
             <AnimatePresence>
@@ -1162,10 +1109,10 @@ export default function MonkeyTypePage() {
                         {/* Mode Selector Config Bar */}
                         <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-2 p-1 sm:p-1.5 rounded-xl self-center text-[10px] sm:text-xs font-bold shadow-2xl theme-transition" style={{ backgroundColor: 'var(--mt-bg-alt)' }}>
                             <div className="flex items-center gap-2 sm:gap-4 px-2 sm:px-4 border-r border-white/5">
-                                <button onClick={() => { setMode("time"); setConfig(30); resetTest(30, "time"); }} className={cn("flex items-center gap-1 sm:gap-1.5 py-1.5 sm:py-2 transition-all outline-none min-h-[36px] sm:min-h-0", mode === "time" ? "text-[var(--mt-primary)]" : "hover:text-[var(--mt-text)]")}>
+                                <button onClick={() => { setMode("time"); setConfig(30); resetTest(30, "time"); }} className={cn("flex items-center gap-1 sm:gap-1.5 py-1.5 sm:py-2 transition-all outline-none min-h-[36px] sm:min-h-0 cursor-pointer", mode === "time" ? "text-[var(--mt-primary)]" : "hover:text-[var(--mt-text)]")}>
                                     <Timer className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> time
                                 </button>
-                                <button onClick={() => { setMode("words"); setConfig(25); resetTest(25, "words"); }} className={cn("flex items-center gap-1 sm:gap-1.5 py-1.5 sm:py-2 transition-all outline-none min-h-[36px] sm:min-h-0", mode === "words" ? "text-[var(--mt-primary)]" : "hover:text-[var(--mt-text)]")}>
+                                <button onClick={() => { setMode("words"); setConfig(25); resetTest(25, "words"); }} className={cn("flex items-center gap-1 sm:gap-1.5 py-1.5 sm:py-2 transition-all outline-none min-h-[36px] sm:min-h-0 cursor-pointer", mode === "words" ? "text-[var(--mt-primary)]" : "hover:text-[var(--mt-text)]")}>
                                     <Type className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> words
                                 </button>
                             </div>
@@ -1173,13 +1120,13 @@ export default function MonkeyTypePage() {
                             <div className="flex items-center gap-2 sm:gap-4 px-2 sm:px-4 border-r border-white/5">
                                 {mode === "time" ? (
                                     [15, 30, 60, 120].map(t => (
-                                        <button key={t} onClick={() => { setConfig(t as GameConfig); resetTest(t as GameConfig); }} className={cn("py-1.5 sm:py-2 transition-all outline-none min-h-[36px] sm:min-h-0", config === t ? "text-[var(--mt-primary)]" : "hover:text-[var(--mt-text)]")}>
+                                        <button key={t} onClick={() => { setConfig(t as GameConfig); resetTest(t as GameConfig); }} className={cn("py-1.5 sm:py-2 transition-all outline-none min-h-[36px] sm:min-h-0 cursor-pointer", config === t ? "text-[var(--mt-primary)]" : "hover:text-[var(--mt-text)]")}>
                                             {t}
                                         </button>
                                     ))
                                 ) : (
                                     [10, 25, 50, 100].map(w => (
-                                        <button key={w} onClick={() => { setConfig(w as GameConfig); resetTest(w as GameConfig); }} className={cn("py-1.5 sm:py-2 transition-all outline-none min-h-[36px] sm:min-h-0", config === w ? "text-[var(--mt-primary)]" : "hover:text-[var(--mt-text)]")}>
+                                        <button key={w} onClick={() => { setConfig(w as GameConfig); resetTest(w as GameConfig); }} className={cn("py-1.5 sm:py-2 transition-all outline-none min-h-[36px] sm:min-h-0 cursor-pointer", config === w ? "text-[var(--mt-primary)]" : "hover:text-[var(--mt-text)]")}>
                                             {w}
                                         </button>
                                     ))
@@ -1187,10 +1134,10 @@ export default function MonkeyTypePage() {
                             </div>
 
                             <div className="flex items-center gap-2 sm:gap-4 px-2 sm:px-4 border-r border-white/5">
-                                <button onClick={() => { setLanguage("english"); resetTest(undefined, undefined, "english"); }} className={cn("py-1.5 sm:py-2 transition-all outline-none min-h-[36px] sm:min-h-0", language === "english" ? "text-[var(--mt-primary)]" : "hover:text-[var(--mt-text)]")}>
+                                <button onClick={() => { setLanguage("english"); resetTest(undefined, undefined, "english"); }} className={cn("py-1.5 sm:py-2 transition-all outline-none min-h-[36px] sm:min-h-0 cursor-pointer", language === "english" ? "text-[var(--mt-primary)]" : "hover:text-[var(--mt-text)]")}>
                                     english
                                 </button>
-                                <button onClick={() => { setLanguage("khmer"); resetTest(undefined, undefined, "khmer"); }} className={cn("py-1.5 sm:py-2 transition-all outline-none min-h-[36px] sm:min-h-0", language === "khmer" ? "text-[var(--mt-primary)]" : "hover:text-[var(--mt-text)]")}>
+                                <button onClick={() => { setLanguage("khmer"); resetTest(undefined, undefined, "khmer"); }} className={cn("py-1.5 sm:py-2 transition-all outline-none min-h-[36px] sm:min-h-0 cursor-pointer", language === "khmer" ? "text-[var(--mt-primary)]" : "hover:text-[var(--mt-text)]")}>
                                     khmer
                                 </button>
                             </div>

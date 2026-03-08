@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { JetBrains_Mono, Hanuman } from "next/font/google";
 import "./globals.css";
+import { SessionProvider } from "next-auth/react";
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
@@ -47,7 +48,9 @@ export default function RootLayout({
         className={`${jetbrainsMono.variable} ${hanuman.variable} antialiased`}
         suppressHydrationWarning
       >
-        {children}
+        <SessionProvider>
+          {children}
+        </SessionProvider>
       </body>
     </html>
   );
