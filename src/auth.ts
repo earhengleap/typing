@@ -12,14 +12,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         verificationTokensTable: verificationTokens,
     }),
     session: {
-        strategy: "database", // Use database sessions for more reliability with Neon
+        strategy: "jwt", // Using JWT allows both Credentials and OAuth to work seamlessly
         maxAge: 30 * 24 * 60 * 60, // 30 days
-        updateAge: 24 * 60 * 60, // 24 hours
     },
     callbacks: {
-        session({ session, user }) {
-            if (session.user && user.id) {
-                session.user.id = user.id;
+        async jwt({ token, user, trigger, session }) {
+            if (user) {
+                token.id = user.id;
+            }
+            if (trigger === "update" && session?.name) {
+                token.name = session.name;
+            }
+            return token;
+        },
+        async session({ session, token }) {
+            if (token.id && session.user) {
+                session.user.id = token.id as string;
             }
             return session;
         },
