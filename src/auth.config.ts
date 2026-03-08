@@ -4,8 +4,11 @@ import Google from "next-auth/providers/google";
 
 export default {
     providers: [
-        GitHub,
+        GitHub({
+            allowDangerousEmailAccountLinking: true,
+        }),
         Google({
+            allowDangerousEmailAccountLinking: true,
             authorization: {
                 params: {
                     prompt: "consent",
