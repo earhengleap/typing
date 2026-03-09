@@ -32,7 +32,8 @@ function LeaderboardPageContent() {
                     theme={activeTheme}
                     isModal={false}
                     initialType={type}
-                    initialMode={mode}
+                    initialMode="time"
+                    initialConfig={mode}
                     initialLanguage={lang}
                 />
             </div>

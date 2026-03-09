@@ -1,7 +1,7 @@
 "use client";
 
 import { THEMES } from "@/constants/themes";
-import { useMonkeyTypeStore } from "@/hooks/use-monkeytype-store";
+import { useMonkeyTypeStore, Theme } from "@/hooks/use-monkeytype-store";
 import { Header } from "@/components/Header";
 import { motion } from "framer-motion";
 
@@ -31,7 +31,7 @@ export default function SettingsPage() {
                             </div>
                             <select
                                 value={theme}
-                                onChange={(e) => useMonkeyTypeStore.setState({ theme: e.target.value as any })}
+                                onChange={(e) => useMonkeyTypeStore.setState({ theme: e.target.value as Theme })}
                                 className="bg-transparent border p-2 rounded-lg outline-none"
                                 style={{ borderColor: activeTheme.bgAlt, color: activeTheme.text }}
                             >

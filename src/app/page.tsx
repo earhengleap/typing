@@ -2,15 +2,13 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RotateCcw, Timer, Keyboard as KeyboardIcon, Type, Globe, Search, Trophy, Zap, MousePointer2 } from "lucide-react";
+import { RotateCcw, Timer, Keyboard as KeyboardIcon, Type, Globe, Zap, MousePointer2, Lock, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMonkeyTypeStore, GameMode, GameConfig, Language, Theme, ChartPoint } from "@/hooks/use-monkeytype-store";
 import { THEMES } from "@/constants/themes";
-import { UserMenu } from "@/components/UserMenu";
-import { saveTypingResult, incrementTestsStarted, getGhostRun } from "@/app/actions/typing-results";
+import { incrementTestsStarted, getGhostRun, saveTypingResult } from "@/app/actions/typing-results";
 import { ACHIEVEMENTS } from "@/constants/achievements";
 import { saveLeaderboardResult } from "@/app/actions/leaderboard";
-import { Leaderboard } from "@/components/Leaderboard";
 import { Header } from "@/components/Header";
 
 const WORD_POOL = [
@@ -90,11 +88,20 @@ const LEFT_SIDE_KEYS = new Set([
 ]);
 
 // THEMES config imported from @/constants/themes
+interface ThemeColors {
+    bg: string;
+    bgAlt: string;
+    text: string;
+    textDim: string;
+    primary: string;
+    error: string;
+    primaryRgb: string;
+}
 
 // --- Performance Chart Component ---
-const PerformanceChart = React.memo(({ data, theme }: { data: ChartPoint[], theme: typeof THEMES.codex }) => {
+const PerformanceChart = React.memo(({ data, activeTheme }: { data: ChartPoint[], activeTheme: ThemeColors }) => {
     if (data.length < 2) return (
-        <div className="w-full flex items-center justify-center h-[200px] mt-4 opacity-30" style={{ color: theme.textDim }}>
+        <div className="w-full flex items-center justify-center h-[200px] mt-4 opacity-30" style={{ color: activeTheme.textDim }}>
             <span className="text-sm font-mono">not enough data to render graph</span>
         </div>
     );
@@ -105,7 +112,7 @@ const PerformanceChart = React.memo(({ data, theme }: { data: ChartPoint[], them
     const PY = 20;
 
     const maxWpm = Math.max(...data.map(d => Math.max(d.wpm, d.raw, 1)));
-    const maxErrors = Math.max(...data.map(d => d.errors), 1);
+    // const maxErrors = Math.max(...data.map(d => d.errors), 1); // Unused
     const maxSec = data[data.length - 1].second;
 
     const getX = (s: number) => (s / maxSec) * (W - PX * 2) + PX;
@@ -144,34 +151,34 @@ const PerformanceChart = React.memo(({ data, theme }: { data: ChartPoint[], them
                 {yTicks.map((t, i) => (
                     <g key={i}>
                         <line x1={PX} y1={t.y} x2={W - PX} y2={t.y}
-                            stroke={theme.textDim} strokeOpacity="0.1" strokeDasharray="4 6" />
-                        <text x={PX - 10} y={t.y + 4} fill={theme.textDim} fontSize="11"
+                            stroke={activeTheme.textDim} strokeOpacity="0.1" strokeDasharray="4 6" />
+                        <text x={PX - 10} y={t.y + 4} fill={activeTheme.textDim} fontSize="11"
                             textAnchor="end" fontFamily="monospace" opacity="0.5">{t.val}</text>
                     </g>
                 ))}
 
                 {/* Raw fill + curve */}
-                <path d={rawFill} fill={theme.textDim} fillOpacity="0.04" />
-                <path d={rawCurve} fill="none" stroke={theme.textDim} strokeWidth="1.5"
+                <path d={rawFill} fill={activeTheme.textDim} fillOpacity="0.04" />
+                <path d={rawCurve} fill="none" stroke={activeTheme.textDim} strokeWidth="1.5"
                     strokeOpacity="0.3" strokeLinecap="round" strokeLinejoin="round" />
 
                 {/* WPM fill + curve */}
-                <path d={wpmFill} fill={theme.primary} fillOpacity="0.12" />
-                <path d={wpmCurve} fill="none" stroke={theme.primary} strokeWidth="2.5"
+                <path d={wpmFill} fill={activeTheme.primary} fillOpacity="0.12" />
+                <path d={wpmCurve} fill="none" stroke={activeTheme.primary} strokeWidth="2.5"
                     strokeLinecap="round" strokeLinejoin="round" />
 
                 {/* WPM dots + error markers */}
                 {data.map((d, i) => (
                     <g key={i}>
                         <circle cx={wpmPts[i][0]} cy={wpmPts[i][1]} r="3.5"
-                            fill={theme.primary} stroke={theme.bg} strokeWidth="1.5" />
+                            fill={activeTheme.primary} stroke={activeTheme.bg} strokeWidth="1.5" />
                         {d.errors > 0 && (
                             <g>
                                 <circle cx={getX(d.second)} cy={H - PY + 2}
                                     r={Math.min(d.errors * 2 + 2, 7)}
-                                    fill={theme.error} fillOpacity="0.75" />
+                                    fill={activeTheme.error} fillOpacity="0.75" />
                                 <text x={getX(d.second)} y={H - PY + 6} fontSize="8"
-                                    fill={theme.bg} textAnchor="middle" fontWeight="bold">{d.errors}</text>
+                                    fill={activeTheme.bg} textAnchor="middle" fontWeight="bold">{d.errors}</text>
                             </g>
                         )}
                     </g>
@@ -179,13 +186,13 @@ const PerformanceChart = React.memo(({ data, theme }: { data: ChartPoint[], them
 
                 {/* X-axis baseline */}
                 <line x1={PX} y1={H - PY} x2={W - PX} y2={H - PY}
-                    stroke={theme.textDim} strokeOpacity="0.15" />
+                    stroke={activeTheme.textDim} strokeOpacity="0.1" />
                 <line x1={PX} y1={PY} x2={PX} y2={H - PY}
-                    stroke={theme.textDim} strokeOpacity="0.15" />
+                    stroke={activeTheme.textDim} strokeOpacity="0.15" />
 
                 {/* X-axis time labels */}
                 {xTicks.map((s, i) => (
-                    <text key={i} x={getX(s)} y={H + 16} fill={theme.textDim} fontSize="11"
+                    <text key={i} x={getX(s)} y={H + 16} fill={activeTheme.textDim} fontSize="11"
                         textAnchor="middle" fontFamily="monospace" opacity="0.45">{s}s</text>
                 ))}
             </svg>
@@ -193,24 +200,25 @@ const PerformanceChart = React.memo(({ data, theme }: { data: ChartPoint[], them
             {/* Legend */}
             <div className="flex gap-8 mt-1 justify-center text-[10px] uppercase tracking-widest font-bold opacity-50">
                 <div className="flex items-center gap-2">
-                    <div className="w-4 h-[2px] rounded" style={{ backgroundColor: theme.primary }} />
-                    <span style={{ color: theme.text }}>wpm</span>
+                    <div className="w-4 h-[2px] rounded" style={{ backgroundColor: activeTheme.primary }} />
+                    <span style={{ color: activeTheme.text }}>wpm</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className="w-4 h-[2px] rounded" style={{ backgroundColor: theme.textDim }} />
-                    <span style={{ color: theme.text }}>raw</span>
+                    <div className="w-4 h-[2px] rounded" style={{ backgroundColor: activeTheme.textDim }} />
+                    <span style={{ color: activeTheme.text }}>raw</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: theme.error, opacity: 0.75 }} />
-                    <span style={{ color: theme.text }}>errors</span>
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: activeTheme.error, opacity: 0.75 }} />
+                    <span style={{ color: activeTheme.text }}>errors</span>
                 </div>
             </div>
         </div>
     );
 });
+PerformanceChart.displayName = "PerformanceChart";
 
 // --- KBD Component ---
-const Kbd = ({ children, activeTheme }: { children: React.ReactNode, activeTheme: any }) => (
+const Kbd = ({ children, activeTheme }: { children: React.ReactNode, activeTheme: ThemeColors }) => (
     <span
         className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-md font-mono font-bold text-[10px] min-w-[20px] transition-all"
         style={{
@@ -224,13 +232,17 @@ const Kbd = ({ children, activeTheme }: { children: React.ReactNode, activeTheme
     </span>
 );
 
-const ShortcutHint = ({ keys, label, activeTheme }: { keys: string[], label: string, activeTheme: any }) => (
+const ShortcutHint = ({ keys, label, activeTheme, splitIndex }: { keys: string[], label: string, activeTheme: ThemeColors, splitIndex?: number }) => (
     <div className="flex items-center gap-2 group cursor-default">
         <div className="flex items-center gap-1">
             {keys.map((key, i) => (
                 <React.Fragment key={i}>
                     <Kbd activeTheme={activeTheme}>{key}</Kbd>
-                    {i < keys.length - 1 && <span className="text-[10px] opacity-20">+</span>}
+                    {i < keys.length - 1 && (
+                        <span className="text-[10px] uppercase font-black opacity-20 px-0.5">
+                            {i === splitIndex ? "or" : "+"}
+                        </span>
+                    )}
                 </React.Fragment>
             ))}
         </div>
@@ -256,7 +268,7 @@ const Word = React.memo(({
     wordUserInput: string,
     wordTargetText: string,
     charRefs: React.MutableRefObject<(HTMLSpanElement | null)[]>,
-    themeColors: { text: string, textDim: string, primary: string, error: string }
+    themeColors: ThemeColors
 }) => {
     return (
         <span className="inline-block whitespace-nowrap">
@@ -300,20 +312,19 @@ const Word = React.memo(({
         </span>
     );
 });
+Word.displayName = "Word";
 
 // --- Keyboard Component ---
 const Keyboard = React.memo(({
     activeKeys,
     errorKey,
     language,
-    isShiftPressed,
     nextKeyData,
     activeTheme
 }: {
     activeKeys: Set<string>,
     errorKey: string | null,
     language: Language,
-    isShiftPressed: boolean,
     nextKeyData: { key: string | null, needsShift: boolean },
     activeTheme: typeof THEMES.codex
 }) => {
@@ -394,6 +405,7 @@ const Keyboard = React.memo(({
         </div>
     );
 });
+Keyboard.displayName = "Keyboard";
 
 export default function MonkeyTypePage() {
     const {
@@ -410,12 +422,11 @@ export default function MonkeyTypePage() {
     const [caretPos, setCaretPos] = useState({ top: 0, left: 0 });
     const [activeKeys, setActiveKeys] = useState<Set<string>>(new Set());
     const [errorKey, setErrorKey] = useState<string | null>(null);
-    const [isShiftPressed, setIsShiftPressed] = useState(false);
     // Init Caps Lock to false (SSR-safe), then hydrate from localStorage after mount
     const [isCapsLock, setIsCapsLock] = useState(false);
     const [lineOffset, setLineOffset] = useState(0);
     const [isFocused, setIsFocused] = useState(true);
-    const [xpResult, setXpResult] = useState<{ gained: number, levelUp: boolean, newAchievements?: string[] } | null>(null);
+    const [xpResult, setXpResult] = useState<{ gained: number; levelUp: boolean; newAchievements?: string[] } | null>(null);
     const [ghost, setGhost] = useState<{ wpm: number, userName: string | null } | null>(null);
     const [ghostPos, setGhostPos] = useState({ top: 0, left: 0, charIndex: 0 });
 
@@ -464,7 +475,6 @@ export default function MonkeyTypePage() {
     const keystrokeTimes = useRef<number[]>([]);
     const wordsRef = useRef<HTMLDivElement>(null);
     const charRefs = useRef<(HTMLSpanElement | null)[]>([]);
-    const ghostTimerRef = useRef<NodeJS.Timeout | null>(null);
     const restartRef = useRef<HTMLButtonElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
     const [hasMounted, setHasMounted] = useState(false);
@@ -484,7 +494,8 @@ export default function MonkeyTypePage() {
     const playClickSound = useCallback(() => {
         if (!soundEnabled) return;
         try {
-            const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext) as typeof AudioContext;
+            const audioCtx = new AudioContextClass();
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
 
@@ -501,7 +512,7 @@ export default function MonkeyTypePage() {
             osc.stop(audioCtx.currentTime + 0.05);
 
             setTimeout(() => audioCtx.close(), 100);
-        } catch (e) { }
+        } catch { }
     }, [soundEnabled]);
 
     const targetText = useMemo(() => {
@@ -520,7 +531,85 @@ export default function MonkeyTypePage() {
             generated.push(pool[Math.floor(Math.random() * pool.length)]);
         }
         setWords(generated);
-    }, [mode, config, language]);
+    }, [mode, config, language, setWords]);
+
+    const startTest = useCallback(() => {
+        setIsActive(true);
+        setStartTime(Date.now());
+        incrementTestsStarted(); // Track test start
+
+        // Fetch Ghost
+        getGhostRun(mode, config as number, language).then(res => {
+            if (res.success && res.ghost) {
+                setGhost(res.ghost);
+            }
+        });
+    }, [mode, config, language, setIsActive, setStartTime, setGhost]);
+
+    const finishTest = useCallback(() => {
+        setIsActive(false);
+        setIsFinished(true);
+        setGhost(null); // Clear ghost on finish
+
+        const elapsedMs = Date.now() - (startTime || Date.now());
+        const durationSeconds = Math.floor(elapsedMs / 1000);
+
+        // Calculate Consistency
+        let consistency = 0;
+        if (keystrokeTimes.current.length > 2) {
+            const offsets = [];
+            for (let i = 1; i < keystrokeTimes.current.length; i++) {
+                offsets.push(keystrokeTimes.current[i] - keystrokeTimes.current[i - 1]);
+            }
+            const mean = offsets.reduce((a, b) => a + b, 0) / offsets.length;
+            const variance = offsets.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / offsets.length;
+            const stdDev = Math.sqrt(variance);
+            const cv = stdDev / mean;
+            consistency = Math.max(0, Math.min(100, Math.round(100 * (1 - cv))));
+        }
+
+        addHistory({
+            wpm: stats.wpm,
+            rawWpm: stats.rawWpm,
+            accuracy: stats.accuracy,
+            mode,
+            config,
+            language,
+            theme,
+            consistency,
+        });
+
+        // Save to Database
+        saveTypingResult({
+            wpm: stats.wpm,
+            rawWpm: stats.rawWpm,
+            accuracy: stats.accuracy,
+            consistency: consistency,
+            mode,
+            config,
+            language,
+            theme,
+            duration: durationSeconds,
+            missedChars: stats.missedChars,
+        }).then((res: { success: boolean; xpGained?: number; levelUp?: boolean; newAchievements?: string[] }) => {
+            if (res.success && res.xpGained) {
+                setXpResult({
+                    gained: res.xpGained,
+                    levelUp: !!res.levelUp,
+                    newAchievements: res.newAchievements
+                });
+            }
+        });
+
+        // Save to Global Leaderboard (Redis)
+        if (stats.wpm > 0) {
+            const currentMode = config.toString();
+            // Save to all-time, weekly, and daily categories with the current language
+            saveLeaderboardResult(stats.wpm, stats.accuracy, stats.rawWpm, consistency, stats.missedChars, "allTime", mode, currentMode, language);
+            saveLeaderboardResult(stats.wpm, stats.accuracy, stats.rawWpm, consistency, stats.missedChars, "weekly", mode, currentMode, language);
+            saveLeaderboardResult(stats.wpm, stats.accuracy, stats.rawWpm, consistency, stats.missedChars, "daily", mode, currentMode, language);
+        }
+    }, [addHistory, config, language, mode, startTime, stats, theme, setIsActive, setIsFinished, setGhost, setXpResult]);
 
     useEffect(() => {
         generateWords();
@@ -536,7 +625,7 @@ export default function MonkeyTypePage() {
             finishTest();
         }
         return () => clearInterval(interval);
-    }, [isActive, timeLeft, mode]);
+    }, [isActive, timeLeft, mode, finishTest, setTimeLeft]);
 
     // Snapshot logic for the chart — runs once on mount/isActive change,
     // reads live values via refs to avoid stale closures
@@ -600,82 +689,6 @@ export default function MonkeyTypePage() {
         return () => clearInterval(interval);
     }, [isActive, ghost, isFinished, startTime, targetText.length]);
 
-    const startTest = () => {
-        setIsActive(true);
-        setStartTime(Date.now());
-        incrementTestsStarted(); // Track test start
-
-        // Fetch Ghost
-        getGhostRun(mode, config as number, language).then(res => {
-            if (res.success && res.ghost) {
-                setGhost(res.ghost);
-            }
-        });
-    };
-
-    const finishTest = () => {
-        setIsActive(false);
-        setIsFinished(true);
-        setGhost(null); // Clear ghost on finish
-
-        const elapsedMs = Date.now() - (startTime || Date.now());
-        const durationSeconds = Math.floor(elapsedMs / 1000);
-
-        // Calculate Consistency
-        let consistency = 0;
-        if (keystrokeTimes.current.length > 2) {
-            const offsets = [];
-            for (let i = 1; i < keystrokeTimes.current.length; i++) {
-                offsets.push(keystrokeTimes.current[i] - keystrokeTimes.current[i - 1]);
-            }
-            const mean = offsets.reduce((a, b) => a + b, 0) / offsets.length;
-            const variance = offsets.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / offsets.length;
-            const stdDev = Math.sqrt(variance);
-            const cv = stdDev / mean;
-            consistency = Math.max(0, Math.min(100, Math.round(100 * (1 - cv))));
-        }
-
-        addHistory({
-            wpm: stats.wpm,
-            rawWpm: stats.rawWpm,
-            accuracy: stats.accuracy,
-            mode,
-            config,
-            language,
-            theme,
-            consistency,
-        });
-
-        // Save to Database
-        saveTypingResult({
-            wpm: stats.wpm,
-            rawWpm: stats.rawWpm,
-            accuracy: stats.accuracy,
-            consistency: consistency,
-            mode,
-            config,
-            language,
-            theme,
-            duration: durationSeconds,
-        }).then(res => {
-            if (res.success && res.xpGained) {
-                setXpResult({
-                    gained: res.xpGained,
-                    levelUp: !!res.levelUp,
-                    newAchievements: res.newAchievements
-                });
-            }
-        });
-
-        // Save to Global Leaderboard (Redis)
-        if (stats.wpm > 0) {
-            const currentMode = config.toString();
-            // Save to all-time, weekly, and daily categories with the current language
-            saveLeaderboardResult(stats.wpm, stats.accuracy, stats.rawWpm, consistency, "allTime", mode, currentMode, language);
-            saveLeaderboardResult(stats.wpm, stats.accuracy, stats.rawWpm, consistency, "weekly", mode, currentMode, language);
-            saveLeaderboardResult(stats.wpm, stats.accuracy, stats.rawWpm, consistency, "daily", mode, currentMode, language);
-        }
-    };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
@@ -692,7 +705,7 @@ export default function MonkeyTypePage() {
         let correct = 0;
         let incorrect = 0;
         let extra = 0;
-        let missed = 0;
+        const missed = 0;
 
         for (let i = 0; i < value.length; i++) {
             if (i < targetText.length) {
@@ -751,7 +764,6 @@ export default function MonkeyTypePage() {
         keystrokeTimes.current = [];
         setActiveKeys(new Set());
         setErrorKey(null);
-        setIsShiftPressed(false);
         resetLiveState(targetMode === "time" ? (targetConfig as number) : 30);
         setLineOffset(0);
         setCaretPos({ top: 0, left: 0 });
@@ -823,7 +835,6 @@ export default function MonkeyTypePage() {
                 }
                 return;
             }
-
             if (e.key === "Tab") {
                 e.preventDefault();
                 isTabHeld.current = true;
@@ -838,7 +849,7 @@ export default function MonkeyTypePage() {
                 return;
             }
 
-            if (e.key === "Escape" || (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "p")) {
+            if (e.key === "Escape" || ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "p")) {
                 e.preventDefault();
                 setIsSearchOpen(true);
                 setSearchQuery("");
@@ -864,7 +875,6 @@ export default function MonkeyTypePage() {
             }
 
             if (e.key === "Shift") {
-                setIsShiftPressed(true);
                 const shiftCode = e.code.toLowerCase();
                 setActiveKeys(prev => {
                     const next = new Set(prev);
@@ -873,6 +883,10 @@ export default function MonkeyTypePage() {
                 });
                 setErrorKey(null);
             } else if (!e.ctrlKey && !e.altKey && !e.metaKey && !["Tab", "Enter", "Escape", "Backspace", "Control", "Alt", "Meta"].includes(e.key)) {
+                if (document.activeElement !== inputRef.current) {
+                    inputRef.current?.focus();
+                }
+
                 const currentInput = userInputRef.current;
                 const expectedChar = targetText[currentInput.length];
                 let isIncorrect = false;
@@ -882,13 +896,9 @@ export default function MonkeyTypePage() {
                 } else if (language === "english") {
                     if (originalKey.toLowerCase() !== expectedChar.toLowerCase()) isIncorrect = true;
                 } else { // Khmer
-                    if (originalKey !== expectedChar) {
-                        isIncorrect = true;
-                    }
+                    if (originalKey !== expectedChar) isIncorrect = true;
                     // Enforce Shift for Space in Khmer
-                    if (expectedChar === " " && !e.shiftKey) {
-                        isIncorrect = true;
-                    }
+                    if (expectedChar === " " && !e.shiftKey) isIncorrect = true;
                 }
 
                 if (key === " ") {
@@ -922,10 +932,7 @@ export default function MonkeyTypePage() {
 
         const handleGlobalKeyUp = (e: KeyboardEvent) => {
             const key = e.key.toLowerCase();
-            const code = e.code.toLowerCase();
-
             if (e.key === "Shift") {
-                setIsShiftPressed(false);
                 setActiveKeys(prev => {
                     const next = new Set(prev);
                     next.delete('shiftleft');
@@ -936,15 +943,11 @@ export default function MonkeyTypePage() {
             } else {
                 setActiveKeys(prev => {
                     const next = new Set(prev);
-                    // Match the same logic as KeyDown to find which QWERTY key to release
                     if (e.key === " ") {
                         next.delete("space");
                     } else {
                         let matchedQwerty = key;
                         for (const [qKey, chars] of Object.entries(KHMER_KEY_MAP)) {
-                            // On keyup, e.key might be the base or shift char depending on current state
-                            // More robust is to use e.code for single char keys if possible,
-                            // but our layout uses qKeys which are usually the key property
                             if (chars.base === e.key || chars.shift === e.key) {
                                 matchedQwerty = qKey;
                                 break;
@@ -956,6 +959,10 @@ export default function MonkeyTypePage() {
                 });
                 setErrorKey(null);
             }
+
+            if (e.key === "Tab") {
+                isTabHeld.current = false;
+            }
         };
 
         const handleTabKeyUp = (e: KeyboardEvent) => {
@@ -965,12 +972,13 @@ export default function MonkeyTypePage() {
         window.addEventListener("keydown", handleGlobalKeyDown);
         window.addEventListener("keyup", handleGlobalKeyUp);
         window.addEventListener("keyup", handleTabKeyUp);
+
         return () => {
             window.removeEventListener("keydown", handleGlobalKeyDown);
             window.removeEventListener("keyup", handleGlobalKeyUp);
             window.removeEventListener("keyup", handleTabKeyUp);
         };
-    }, [isSearchOpen, filteredCommands, selectedIndex, language, isFinished]);
+    }, [isSearchOpen, filteredCommands, selectedIndex, language, isFinished, resetTest, setIsWrongKeyboardLayout, targetText]);
 
     // Caret and 3-Line Shifting Logic
     // Split target text into visual grapheme clusters to avoid broken combining characters in Khmer
@@ -1076,7 +1084,7 @@ export default function MonkeyTypePage() {
                 setLineOffset(prev => prev - lineHeightVal);
             }
         }
-    }, [userInput, words, clusters, clusterIndexes, lineOffset]);
+    }, [userInput, words, clusters, clusterIndexes, lineOffset, fontSize, language]);
 
     if (!hasMounted) {
         return (
@@ -1094,7 +1102,7 @@ export default function MonkeyTypePage() {
         <div
             className={cn(
                 "min-h-screen min-h-[100dvh] w-full flex flex-col items-center justify-start select-none theme-transition",
-                "pt-2 sm:pt-4 md:pt-8 px-[var(--content-px)]",
+                "pt-1 sm:pt-1.5 md:pt-3 px-[var(--content-px)]",
                 language === "khmer" ? "font-sans font-medium" : "font-mono"
             )}
             onClick={() => {
@@ -1162,7 +1170,7 @@ export default function MonkeyTypePage() {
                                     </div>
                                 ) : filteredCommands.length === 0 ? (
                                     <div className="px-6 py-8 text-center opacity-50" style={{ color: activeTheme.textDim }}>
-                                        No commands found matching "{searchQuery}"
+                                        No commands found matching &quot;{searchQuery}&quot;
                                     </div>
                                 ) : (
                                     filteredCommands.map((cmd, i) => (
@@ -1253,7 +1261,7 @@ export default function MonkeyTypePage() {
                                     }}
                                     className="w-full py-3 px-4 bg-[#e2b714] hover:bg-[#d1a700] text-[#323437] transition-all rounded-xl font-bold font-mono text-sm"
                                 >
-                                    I've switched to Khmer
+                                    I&apos;ve switched to Khmer
                                 </button>
                             </div>
                         </motion.div>
@@ -1310,31 +1318,23 @@ export default function MonkeyTypePage() {
                         <div className="relative w-full flex flex-col gap-4 sm:gap-6 md:gap-10 lg:gap-12">
                             {/* Inner Container (No longer blurred here) */}
                             <div className="w-full flex flex-col gap-4 sm:gap-6 md:gap-10 lg:gap-12 transition-all">
-                                {/* Caps Lock Warning — like monkeytype.com */}
+                                {/* Caps Lock Warning — 1:1 Monkeytype Style */}
                                 <AnimatePresence>
                                     {isCapsLock && (
                                         <motion.div
                                             key="capslock"
-                                            initial={{ opacity: 0, height: 0 }}
-                                            animate={{ opacity: 1, height: 'auto' }}
-                                            exit={{ opacity: 0, height: 0 }}
-                                            transition={{ duration: 0.15 }}
-                                            className="flex items-center justify-center gap-2 overflow-hidden"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.1 }}
+                                            className="absolute left-1/2 -translate-x-1/2 -top-4 z-[999] flex items-center gap-3 px-4 py-2 rounded-lg font-mono text-base whitespace-nowrap shadow-lg pointer-events-none"
+                                            style={{
+                                                backgroundColor: activeTheme.primary,
+                                                color: activeTheme.bg,
+                                            }}
                                         >
-                                            <div
-                                                className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold tracking-wider uppercase"
-                                                style={{
-                                                    color: activeTheme.error,
-                                                    backgroundColor: `${activeTheme.error}15`,
-                                                }}
-                                            >
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                    <path d="M12 17v.01" />
-                                                    <path d="M12 13V7" />
-                                                    <circle cx="12" cy="12" r="10" />
-                                                </svg>
-                                                <span>caps lock</span>
-                                            </div>
+                                            <Lock size={18} fill="currentColor" />
+                                            <span>Caps Lock</span>
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
@@ -1574,13 +1574,14 @@ export default function MonkeyTypePage() {
                                             }
                                         }
 
+                                        const nextKeyData = { key: nextKey, needsShift };
+
                                         return (
                                             <Keyboard
                                                 activeKeys={activeKeys}
                                                 errorKey={errorKey}
                                                 language={language}
-                                                isShiftPressed={isShiftPressed}
-                                                nextKeyData={{ key: nextKey, needsShift }}
+                                                nextKeyData={nextKeyData}
                                                 activeTheme={activeTheme}
                                             />
                                         );
@@ -1596,12 +1597,12 @@ export default function MonkeyTypePage() {
                                             activeTheme={activeTheme}
                                         />
                                         <ShortcutHint
-                                            keys={["esc", "ctrl", "shift", "p"]}
+                                            keys={["esc", (typeof navigator !== 'undefined' && /Mac/i.test(navigator.platform)) ? "cmd" : "ctrl", "shift", "p"]}
+                                            splitIndex={0}
                                             label="command line"
                                             activeTheme={activeTheme}
                                         />
                                     </div>
-
                                     <button
                                         ref={restartRef}
                                         onClick={() => resetTest()}
@@ -1820,7 +1821,7 @@ export default function MonkeyTypePage() {
                                 transition={{ delay: 0.3, duration: 0.5 }}
                                 className="flex-1 flex flex-col min-w-0 pt-2"
                             >
-                                <PerformanceChart data={chartData} theme={activeTheme} />
+                                <PerformanceChart data={chartData} activeTheme={activeTheme} />
                             </motion.div>
                         </div>
 
@@ -1833,7 +1834,8 @@ export default function MonkeyTypePage() {
                                     activeTheme={activeTheme}
                                 />
                                 <ShortcutHint
-                                    keys={["esc", "ctrl", "shift", "p"]}
+                                    keys={["esc", (typeof navigator !== 'undefined' && /Mac/i.test(navigator.platform)) ? "cmd" : "ctrl", "shift", "p"]}
+                                    splitIndex={0}
                                     label="command line"
                                     activeTheme={activeTheme}
                                 />

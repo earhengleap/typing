@@ -14,6 +14,5 @@ const sql = neon(databaseUrl || "postgresql://missing_url_error@localhost/error"
 export const db = drizzle(sql, { schema });
 
 if (typeof window === 'undefined' && databaseUrl) {
-    const host = databaseUrl.split('@')[1]?.split('/')[0] || 'unknown';
-    // console.log(`📡 Database Connecting to: ${host}`);
+    // Database connection check
 }

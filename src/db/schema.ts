@@ -1,4 +1,4 @@
-import { boolean, timestamp, pgTable, text, primaryKey, integer, varchar, jsonb } from "drizzle-orm/pg-core";
+import { timestamp, pgTable, text, primaryKey, integer, varchar, jsonb } from "drizzle-orm/pg-core";
 import type { AdapterAccountType } from "next-auth/adapters";
 
 export const users = pgTable("user", {
@@ -111,5 +111,7 @@ export const typingResults = pgTable("typing_result", {
     config: integer("config").notNull(),
     language: varchar("language", { length: 50 }).notNull(),
     theme: varchar("theme", { length: 50 }).notNull(),
+    duration: integer("duration"),
+    missedChars: integer("missed_chars"),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
 });

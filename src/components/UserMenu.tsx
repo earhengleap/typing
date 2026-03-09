@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { THEMES } from "@/constants/themes";
 import { LogIn, LogOut, User, Settings, BarChart2 } from "lucide-react";
@@ -83,7 +84,7 @@ export function UserMenu() {
             >
                 {session?.user?.image ? (
                     <div className="relative w-7 h-7 rounded-full overflow-hidden border border-white/10 transition-transform group-hover:border-white/20">
-                        <img src={session.user.image} alt="Avatar" className="w-full h-full object-cover" />
+                        <Image src={session.user.image} alt="Avatar" fill className="object-cover" />
                     </div>
                 ) : (
                     <div className="p-1.5 rounded-full" style={{ backgroundColor: activeTheme.bgAlt }}>

@@ -4,9 +4,9 @@ import { auth } from "@/auth";
 import { db } from "@/db";
 import { typingResults, users, userAchievements } from "@/db/schema";
 import { desc, eq, sql, and } from "drizzle-orm";
-import type { RunHistory } from "@/hooks/use-monkeytype-store";
+import type { RunHistory, Theme } from "@/hooks/use-monkeytype-store";
 
-export async function saveTypingResult(run: Omit<RunHistory, "id" | "date"> & { duration: number; consistency: number }) {
+export async function saveTypingResult(run: Omit<RunHistory, "id" | "date"> & { duration: number; consistency: number; missedChars?: number }) {
     const session = await auth();
     if (!session?.user?.id) return { success: false, error: "Unauthorized" };
 
@@ -22,6 +22,8 @@ export async function saveTypingResult(run: Omit<RunHistory, "id" | "date"> & { 
             config: run.config,
             language: run.language,
             theme: run.theme,
+            duration: run.duration,
+            missedChars: run.missedChars || 0,
         });
 
         // 2. Fetch current user stats for xp/level/streak logic
@@ -126,7 +128,7 @@ export async function incrementTestsStarted() {
             .set({ testsStarted: sql`${users.testsStarted} + 1` })
             .where(eq(users.id, session.user.id));
         return { success: true };
-    } catch (error) {
+    } catch {
         return { success: false };
     }
 }
@@ -140,7 +142,7 @@ export async function updateAccount(data: { bio?: string; keyboard?: string }) {
             .set({ bio: data.bio, keyboard: data.keyboard })
             .where(eq(users.id, session.user.id));
         return { success: true };
-    } catch (error) {
+    } catch {
         return { success: false, error: "Failed to update profile" };
     }
 }
@@ -175,16 +177,17 @@ export async function getUserTypingHistory(userId?: string) {
             mode: r.mode as "time" | "words",
             config: r.config as 15 | 30 | 60 | 120 | 10 | 25 | 50 | 100,
             language: r.language as "english" | "khmer",
-            theme: r.theme as any,
+            theme: r.theme as Theme,
+            consistency: r.consistency || 0,
             date: r.createdAt.getTime(),
         }));
 
         const user = await db.select().from(users).where(eq(users.id, targetId));
 
         return { success: true, data: history, user: user[0] };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Failed to fetch typing history for user:", targetId, error);
-        return { success: false, error: error.message || "Database error" };
+        return { success: false, error: (error as Error).message || "Database error" };
     }
 }
 export async function runManualMigration() {
@@ -193,7 +196,7 @@ export async function runManualMigration() {
         await db.execute(sql`ALTER TABLE "typing_result" RENAME COLUMN "userId" TO "user_id"`);
         console.log("Renamed userId to user_id");
     } catch (e) {
-        console.log("Rename skipped:", (e as any).message);
+        console.log("Rename skipped:", (e as Error).message);
     }
 
     const cols = [
@@ -201,6 +204,7 @@ export async function runManualMigration() {
         "tests_started", "tests_completed", "typing_time",
         "last_test_at", "joined_at"
     ];
+    const typingResultCols = ["duration", "missed_chars"];
 
     for (const col of cols) {
         try {
@@ -214,9 +218,18 @@ export async function runManualMigration() {
             if (col === "joined_at") type = "timestamp DEFAULT now() NOT NULL";
 
             await db.execute(sql.raw(`ALTER TABLE "user" ADD COLUMN IF NOT EXISTS "${col}" ${type}`));
-            console.log(`Added column ${col}`);
+            console.log(`Added column ${col} to user table`);
         } catch (e) {
-            console.log(`Failed to add ${col}:`, (e as any).message);
+            console.log(`Failed to add ${col} to user table:`, (e as Error).message);
+        }
+    }
+
+    for (const col of typingResultCols) {
+        try {
+            await db.execute(sql.raw(`ALTER TABLE "typing_result" ADD COLUMN IF NOT EXISTS "${col}" integer`));
+            console.log(`Added column ${col} to typing_result table`);
+        } catch (e) {
+            console.log(`Failed to add ${col} to typing_result table:`, (e as Error).message);
         }
     }
 
@@ -241,7 +254,7 @@ export async function getUserAchievements(userId?: string) {
         return { success: false, data: [] };
     }
 }
-export async function updateUserSettings(settings: any) {
+export async function updateUserSettings(settings: Record<string, unknown>) {
     const session = await auth();
     if (!session?.user?.id) return { success: false, error: "Unauthorized" };
 

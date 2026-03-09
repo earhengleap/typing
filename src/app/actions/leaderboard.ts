@@ -13,6 +13,7 @@ export async function saveLeaderboardResult(
     accuracy: number,
     rawWpm: number,
     consistency: number,
+    missedChars: number = 0,
     type: "allTime" | "weekly" | "daily" = "allTime",
     gameMode: string = "time",
     config: string = "15",
@@ -27,7 +28,7 @@ export async function saveLeaderboardResult(
 
     const userName = session.user.name || "Anonymous";
     const userImage = session.user.image || "";
-    const userLevel = (session.user as any).level || 1;
+    const userLevel = (session.user as { level?: number }).level || 1;
 
     const { wpm: wpmKey, metadata: metaKey } = getLeaderboardKeys(type, gameMode, config, language);
 
@@ -47,6 +48,7 @@ export async function saveLeaderboardResult(
                 accuracy,
                 rawWpm,
                 consistency,
+                missedChars,
                 date: new Date().toISOString()
             };
 

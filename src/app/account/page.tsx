@@ -1,13 +1,14 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import Image from "next/image";
 import { THEMES } from "@/constants/themes";
-import { useMonkeyTypeStore } from "@/hooks/use-monkeytype-store";
+import { useMonkeyTypeStore, RunHistory } from "@/hooks/use-monkeytype-store";
 import { Header } from "@/components/Header";
 import { motion } from "framer-motion";
 import { useEffect, useState, useMemo } from "react";
 import { getUserTypingHistory, updateAccount, getUserAchievements } from "@/app/actions/typing-results";
-import { ACHIEVEMENTS } from "@/constants/achievements";
+import { ACHIEVEMENTS, Achievement } from "@/constants/achievements";
 import {
     Calendar,
     Zap,
@@ -20,21 +21,32 @@ import {
     X,
     User,
     Keyboard as KeyboardIcon,
-    Link as LinkIcon,
-    ChevronRight,
-    Search,
-    Award
+    Award,
+    Link as LinkIcon
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+
+interface UserData {
+    level?: number;
+    xp?: number;
+    typingTime?: number;
+    streak?: number;
+    bio?: string | null;
+    keyboard?: string | null;
+    testsStarted?: number;
+    testsCompleted?: number;
+    achievements?: string[];
+    joinedAt?: string | Date | null;
+    [key: string]: any;
+}
 
 export default function AccountPage() {
     const { data: session } = useSession();
     const theme = useMonkeyTypeStore((state) => state.theme);
     const activeTheme = THEMES[theme] || THEMES.codex;
 
-    const [history, setHistory] = useState<any[]>([]);
-    const [userData, setUserData] = useState<any>(null);
-    const [achievements, setAchievements] = useState<any[]>([]);
+    const [history, setHistory] = useState<RunHistory[]>([]);
+    const [userData, setUserData] = useState<UserData | null>(null);
+    const [achievements, setAchievements] = useState<{ achievementId: string; unlockedAt: string | Date }[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     // Editing state
@@ -42,13 +54,14 @@ export default function AccountPage() {
     const [bioValue, setBioValue] = useState("");
     const [isEditingKeyboard, setIsEditingKeyboard] = useState(false);
     const [keyboardValue, setKeyboardValue] = useState("");
+    const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
 
     useEffect(() => {
         if (session?.user?.id) {
             getUserTypingHistory(session.user.id).then((res) => {
                 if (res.success) {
                     setHistory(res.data || []);
-                    setUserData(res.user);
+                    setUserData(res.user || null);
                     setBioValue(res.user?.bio || "");
                     setKeyboardValue(res.user?.keyboard || "");
                 }
@@ -141,7 +154,7 @@ export default function AccountPage() {
         ];
 
         const languages: ("english" | "khmer")[] = ["english", "khmer"];
-        const results: any[] = [];
+        const results: { mode: string; config: number; language: string; best: number | string }[] = [];
 
         languages.forEach(lang => {
             configs.forEach(c => {
@@ -179,7 +192,9 @@ export default function AccountPage() {
                 <section className="flex flex-col md:flex-row gap-8 items-start">
                     <div className="relative group shrink-0">
                         {session?.user?.image ? (
-                            <img src={session.user.image} alt="Avatar" className="w-32 h-32 rounded-3xl object-cover border-4" style={{ borderColor: activeTheme.bgAlt }} />
+                            <div className="relative w-32 h-32 rounded-3xl overflow-hidden border-4" style={{ borderColor: activeTheme.bgAlt }}>
+                                <Image src={session.user.image} alt="Avatar" fill className="object-cover" />
+                            </div>
                         ) : (
                             <div className="w-32 h-32 rounded-3xl flex items-center justify-center border-4 border-dashed" style={{ borderColor: activeTheme.bgAlt, color: activeTheme.textDim }}>
                                 <User size={48} />
@@ -262,7 +277,7 @@ export default function AccountPage() {
                                     <input
                                         autoFocus
                                         value={keyboardValue}
-                                        onChange={(e) => setKeyboardValue(e.target.value)}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setKeyboardValue(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && handleSaveKeyboard()}
                                         className="bg-transparent border-none outline-none w-32"
                                         style={{ color: activeTheme.text }}
@@ -275,9 +290,9 @@ export default function AccountPage() {
                                 </button>
                             </div>
                             {userData?.keyboard && !isEditingKeyboard && (
-                                <a href={userData.keyboard.startsWith('http') ? userData.keyboard : `https://${userData.keyboard}`} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-full hover:bg-white/5" style={{ color: activeTheme.primary }}>
+                                <div className="p-1.5 rounded-full hover:bg-white/5" style={{ color: activeTheme.primary }}>
                                     <LinkIcon size={14} />
-                                </a>
+                                </div>
                             )}
                         </div>
                     </div>
@@ -288,6 +303,7 @@ export default function AccountPage() {
                             { label: "Tests Started", value: userData?.testsStarted || 0, icon: PlayCircle },
                             { label: "Tests Completed", value: userData?.testsCompleted || 0, icon: CheckCircle2 },
                             { label: "Time Typing", value: timePlaying, icon: Clock },
+                            { label: "Achievements", value: (userData?.achievements as string[] || []).length, icon: Award },
                         ].map((stat, i) => (
                             <div key={i} className="p-4 rounded-2xl flex items-center gap-4 border" style={{ backgroundColor: activeTheme.bgAlt + "30", borderColor: activeTheme.bgAlt }}>
                                 <div className="p-2.5 rounded-xl" style={{ backgroundColor: activeTheme.bgAlt, color: activeTheme.primary }}>
@@ -354,27 +370,29 @@ export default function AccountPage() {
                         </div>
 
                         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
-                            {Object.values(ACHIEVEMENTS).map((a) => {
-                                const isUnlocked = achievements.some(ua => ua.achievementId === a.id);
+                            {Object.values(ACHIEVEMENTS).map((achievement) => {
+                                const isUnlocked = (userData?.achievements as string[] || []).includes(achievement.id);
+                                const AchievementIcon = achievement.icon;
                                 return (
                                     <div
-                                        key={a.id}
+                                        key={achievement.id}
                                         className="relative group/ach p-4 rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all"
                                         style={{
-                                            backgroundColor: isUnlocked ? `${a.color}10` : activeTheme.bgAlt + "10",
-                                            borderColor: isUnlocked ? `${a.color}40` : activeTheme.bgAlt,
+                                            backgroundColor: isUnlocked ? `${achievement.color}10` : activeTheme.bgAlt + "10",
+                                            borderColor: isUnlocked ? `${achievement.color}40` : activeTheme.bgAlt,
                                             filter: isUnlocked ? 'none' : 'grayscale(1) opacity(0.5)'
                                         }}
+                                        onClick={() => isUnlocked && setSelectedAchievement(achievement)}
                                     >
-                                        <div className="p-3 rounded-xl" style={{ backgroundColor: isUnlocked ? `${a.color}20` : activeTheme.bgAlt, color: isUnlocked ? a.color : activeTheme.textDim }}>
-                                            <a.icon size={24} />
+                                        <div className="p-3 rounded-xl" style={{ backgroundColor: isUnlocked ? `${achievement.color}20` : activeTheme.bgAlt, color: isUnlocked ? achievement.color : activeTheme.textDim }}>
+                                            <AchievementIcon size={24} />
                                         </div>
-                                        <span className="text-[10px] font-black text-center line-clamp-1" style={{ color: isUnlocked ? activeTheme.text : activeTheme.textDim }}>{a.name}</span>
+                                        <span className="text-[10px] font-black text-center line-clamp-1" style={{ color: isUnlocked ? activeTheme.text : activeTheme.textDim }}>{achievement.name}</span>
 
                                         {/* Achievement Tooltip */}
                                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 p-3 rounded-xl bg-[#000] text-white text-[10px] font-bold whitespace-nowrap opacity-0 group-hover/ach:opacity-100 pointer-events-none transition-all scale-95 group-hover/ach:scale-100 z-20 shadow-2xl border border-white/10 w-48 text-center leading-relaxed">
-                                            <div style={{ color: a.color }}>{a.name}</div>
-                                            <div className="opacity-70 mt-1 font-medium">{a.description}</div>
+                                            <div style={{ color: achievement.color }}>{achievement.name}</div>
+                                            <div className="opacity-70 mt-1 font-medium">{achievement.description}</div>
                                             {!isUnlocked && <div className="mt-2 pt-2 border-t border-white/10 opacity-50 font-normal italic uppercase tracking-widest">Locked</div>}
                                         </div>
                                     </div>
@@ -417,7 +435,7 @@ export default function AccountPage() {
 
                         <div className="flex flex-col gap-4">
                             {[15, 60].map((t) => (
-                                <div key={t} className="p-6 rounded-3xl border flex flex-col gap-4" style={{ backgroundColor: activeTheme.bgAlt + "20", borderColor: activeTheme.bgAlt }}>
+                                <div key={t} className="p-6 rounded-3xl border flex flex-col gap-4" style={{ backgroundColor: activeTheme.bgAlt + "20", borderColor: activeTheme.bgAlt } as React.CSSProperties}>
                                     <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: activeTheme.bgAlt }}>
                                         <span className="text-xl font-black" style={{ color: activeTheme.text }}>{t} seconds</span>
                                         <span className="text-xs font-bold opacity-50 uppercase tracking-widest" style={{ color: activeTheme.textDim }}>Global Rank #---</span>

@@ -89,7 +89,7 @@ export default function LoginPage() {
             } else if (result?.ok) {
                 router.push("/");
             }
-        } catch (err) {
+        } catch {
             setError("Something went wrong");
             setIsLoading(false);
         }

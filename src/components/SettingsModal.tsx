@@ -11,17 +11,18 @@ import {
     Settings,
     Layout
 } from "lucide-react";
-import { useMonkeyTypeStore } from "@/hooks/use-monkeytype-store";
+import { useMonkeyTypeStore, ThemeColors } from "@/hooks/use-monkeytype-store";
 import { THEMES } from "@/constants/themes";
 import { updateUserSettings } from "@/app/actions/typing-results";
 import { useSession } from "next-auth/react";
+import { LucideIcon } from "lucide-react";
 
-export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+export function SettingsModal({ isOpen, onCloseAction }: { isOpen: boolean; onCloseAction: () => void }) {
     const { data: session } = useSession();
     const store = useMonkeyTypeStore();
     const activeTheme = THEMES[store.theme] || THEMES.codex;
 
-    const handleToggle = async (key: string, value: any) => {
+    const handleToggle = async (key: string, value: string | number | boolean) => {
         store.setSettings({ [key]: value });
         if (session?.user?.id) {
             // Background sync to db
@@ -41,7 +42,7 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-sm bg-black/40"
-                onClick={onClose}
+                onClick={onCloseAction}
             >
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -58,7 +59,7 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
                             <h2 className="text-xl font-black uppercase tracking-wider" style={{ color: activeTheme.text }}>Settings</h2>
                         </div>
                         <button
-                            onClick={onClose}
+                            onClick={onCloseAction}
                             className="p-2 rounded-xl transition-colors hover:bg-white/5"
                             style={{ color: activeTheme.textDim }}
                         >
@@ -121,7 +122,7 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
                                         value={store.fontSize}
                                         onChange={(e) => handleToggle('fontSize', parseInt(e.target.value))}
                                         className="w-full accent-[var(--mt-primary)]"
-                                        style={{ '--mt-primary': activeTheme.primary } as any}
+                                        style={{ '--mt-primary': activeTheme.primary } as React.CSSProperties}
                                     />
                                 </div>
                                 <div className="flex flex-col gap-2">
@@ -145,7 +146,7 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
                     {/* Footer */}
                     <div className="px-8 py-6 bg-black/10 flex justify-end">
                         <button
-                            onClick={onClose}
+                            onClick={onCloseAction}
                             className="px-6 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95"
                             style={{ backgroundColor: activeTheme.primary, color: activeTheme.bg }}
                         >
@@ -158,7 +159,14 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
     );
 }
 
-function SettingToggle({ label, desc, icon: Icon, isActive, onToggle, theme }: any) {
+function SettingToggle({ label, desc, icon: Icon, isActive, onToggle, theme }: {
+    label: string,
+    desc: string,
+    icon: LucideIcon,
+    isActive: boolean,
+    onToggle: () => void,
+    theme: ThemeColors
+}) {
     return (
         <button
             onClick={onToggle}

@@ -2,8 +2,8 @@
 
 import { useMonkeyTypeStore } from "@/hooks/use-monkeytype-store";
 import { THEMES } from "@/constants/themes";
-import { LogIn, Eye, EyeOff, ArrowLeft, KeyRound } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Eye, EyeOff, ArrowLeft, KeyRound } from "lucide-react";
+import { useState } from "react";
 import { motion, Variants } from "framer-motion";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -19,7 +19,7 @@ function ResetPasswordContent() {
 
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(!token ? "Invalid or missing reset token." : null);
     const [success, setSuccess] = useState<string | null>(null);
 
     const [passwordData, setPasswordData] = useState({
@@ -27,11 +27,6 @@ function ResetPasswordContent() {
         verifyPassword: ""
     });
 
-    useEffect(() => {
-        if (!token) {
-            setError("Invalid or missing reset token.");
-        }
-    }, [token]);
 
     const handleReset = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -111,7 +106,7 @@ function ResetPasswordContent() {
                                 value={passwordData.password}
                                 onChange={(e) => setPasswordData({ ...passwordData, password: e.target.value })}
                                 className="w-full px-5 py-3 rounded-xl outline-none transition-all focus:ring-2 border border-transparent shadow-sm"
-                                style={{ ...inputStyle, "--tw-ring-color": activeTheme.primary } as any}
+                                style={{ ...inputStyle, "--tw-ring-color": activeTheme.primary } as React.CSSProperties}
                             />
                             <button
                                 type="button"
@@ -128,7 +123,7 @@ function ResetPasswordContent() {
                             value={passwordData.verifyPassword}
                             onChange={(e) => setPasswordData({ ...passwordData, verifyPassword: e.target.value })}
                             className="w-full px-5 py-3 rounded-xl outline-none transition-all focus:ring-2 border border-transparent shadow-sm"
-                            style={{ ...inputStyle, "--tw-ring-color": activeTheme.primary } as any}
+                            style={{ ...inputStyle, "--tw-ring-color": activeTheme.primary } as React.CSSProperties}
                         />
 
                         <button

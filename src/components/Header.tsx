@@ -54,7 +54,7 @@ export function Header({ activeTheme }: HeaderProps) {
                         <UserMenu />
                     </div>
                 </div>
-                <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+                <SettingsModal isOpen={isSettingsOpen} onCloseAction={() => setIsSettingsOpen(false)} />
             </header>
         </>
     );

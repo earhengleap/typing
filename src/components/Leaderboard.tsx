@@ -1,11 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { getTopLeaderboard } from "@/app/actions/leaderboard";
 import { Trophy, Medal, User, Award, X, Clock, Calendar, Globe, List, Type } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Theme } from "@/hooks/use-monkeytype-store";
+import { useSession } from "next-auth/react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 interface LeaderboardEntry {
@@ -17,6 +18,7 @@ interface LeaderboardEntry {
     accuracy: number;
     rawWpm: number;
     consistency?: number;
+    missedChars?: number;
     date: string;
 }
 
@@ -51,6 +53,7 @@ export function Leaderboard({
     initialConfig = "15",
     initialLanguage = "english"
 }: LeaderboardProps) {
+    const { data: session } = useSession();
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -75,7 +78,7 @@ export function Leaderboard({
         };
 
         fetchLeaderboard();
-    }, [isOpen, activeTab, activeMode, activeLanguage]);
+    }, [isOpen, activeTab, activeMode, activeConfig, activeLanguage]);
 
     const updateQueryParams = (type: string, mode: string, config: string, lang: string) => {
         const params = new URLSearchParams(searchParams.toString());
@@ -250,13 +253,24 @@ export function Leaderboard({
                                     <th className="px-4 py-2 w-12 text-center">#</th>
                                     <th className="px-4 py-2">name</th>
                                     <th className="px-4 py-2 text-right">wpm</th>
-                                    <th className="px-4 py-2 text-right">accuracy</th>
+                                    <th className="px-4 py-2 text-right">acc</th>
+                                    <th className="px-4 py-2 text-right">missed</th>
                                     <th className="px-4 py-2 text-right">consistency</th>
                                     <th className="px-4 py-2 text-right md:table-cell hidden">raw</th>
                                     <th className="px-4 py-2 text-right md:table-cell hidden">date</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <motion.tbody
+                                initial="hidden"
+                                animate="show"
+                                variants={{
+                                    show: {
+                                        transition: {
+                                            staggerChildren: 0.03
+                                        }
+                                    }
+                                }}
+                            >
                                 {loading ? (
                                     Array(10).fill(0).map((_, i) => (
                                         <tr key={i} className="animate-pulse">
@@ -266,8 +280,26 @@ export function Leaderboard({
                                 ) : entries.length > 0 ? (
                                     entries.map((entry, index) => {
                                         const { date, time } = formatDate(entry.date);
+                                        const isMe = session?.user?.id === entry.userId;
+
                                         return (
-                                            <tr key={entry.userId} className="group hover:bg-white/5 transition-colors">
+                                            <motion.tr
+                                                key={entry.userId}
+                                                variants={{
+                                                    hidden: { opacity: 0, x: -10 },
+                                                    show: { opacity: 1, x: 0 }
+                                                }}
+                                                className={cn(
+                                                    "group transition-colors relative",
+                                                    isMe ? "bg-white/[0.03]" : "hover:bg-white/5"
+                                                )}
+                                            >
+                                                {isMe && (
+                                                    <div
+                                                        className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-full"
+                                                        style={{ backgroundColor: theme.primary }}
+                                                    />
+                                                )}
                                                 <td className="px-4 py-3 text-center rounded-l-2xl">
                                                     {index === 0 ? (
                                                         <div className="flex justify-center">
@@ -287,9 +319,9 @@ export function Leaderboard({
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0 overflow-hidden">
+                                                        <div className="relative w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0 overflow-hidden">
                                                             {entry.image ? (
-                                                                <img src={entry.image} alt="" className="w-full h-full object-cover" />
+                                                                <Image src={entry.image} alt={entry.name || "Avatar"} fill className="object-cover" />
                                                             ) : (
                                                                 <User className="w-4 h-4 opacity-50" />
                                                             )}
@@ -311,7 +343,12 @@ export function Leaderboard({
                                                     </span>
                                                 </td>
                                                 <td className="px-4 py-3 text-right">
-                                                    <span className="opacity-50 tabular-nums">
+                                                    <span className="opacity-30 font-mono text-xs tabular-nums">
+                                                        {entry.missedChars ?? 0}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    <span className="opacity-50 font-mono text-xs tabular-nums">
                                                         {entry.consistency ? `${entry.consistency.toFixed(0)}%` : '-'}
                                                     </span>
                                                 </td>
@@ -324,7 +361,7 @@ export function Leaderboard({
                                                         <span className="text-[10px] opacity-30">{time}</span>
                                                     </div>
                                                 </td>
-                                            </tr>
+                                            </motion.tr>
                                         );
                                     })
                                 ) : (
@@ -334,7 +371,7 @@ export function Leaderboard({
                                         </td>
                                     </tr>
                                 )}
-                            </tbody>
+                            </motion.tbody>
                         </table>
                     </div>
                     <div className="px-8 py-4 bg-white/5 text-[10px] uppercase font-black tracking-[0.2em] opacity-20 text-center">

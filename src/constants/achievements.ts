@@ -1,19 +1,18 @@
 import {
     Zap,
     Target,
-    Trophy,
     Timer,
     Flame,
     Award,
     Wind,
-    ShieldCheck
+    LucideIcon
 } from "lucide-react";
 
 export interface Achievement {
     id: string;
     name: string;
     description: string;
-    icon: any;
+    icon: LucideIcon;
     color: string;
 }
 

@@ -25,6 +25,16 @@ export interface ChartPoint {
     second: number;
 }
 
+export interface ThemeColors {
+    bg: string;
+    bgAlt: string;
+    text: string;
+    textDim: string;
+    primary: string;
+    error: string;
+    primaryRgb: string;
+}
+
 export interface RunHistory {
     id: string;
     wpm: number;
