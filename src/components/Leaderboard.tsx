@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getTopLeaderboard } from "@/app/actions/leaderboard";
-import { Trophy, Medal, User, Award, X, Clock, Calendar, Globe, List } from "lucide-react";
+import { Trophy, Medal, User, Award, X, Clock, Calendar, Globe, List, Type } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Theme } from "@/hooks/use-monkeytype-store";
@@ -12,9 +12,11 @@ interface LeaderboardEntry {
     userId: string;
     name: string;
     image?: string;
+    level?: number;
     wpm: number;
     accuracy: number;
     rawWpm: number;
+    consistency?: number;
     date: string;
 }
 
@@ -34,7 +36,8 @@ interface LeaderboardProps {
     onClose?: () => void;
     isModal?: boolean;
     initialType?: "allTime" | "weekly" | "daily";
-    initialMode?: "15" | "60";
+    initialMode?: "time" | "words";
+    initialConfig?: string;
     initialLanguage?: "english" | "khmer";
 }
 
@@ -44,7 +47,8 @@ export function Leaderboard({
     onClose,
     isModal = true,
     initialType = "allTime",
-    initialMode = "15",
+    initialMode = "time",
+    initialConfig = "15",
     initialLanguage = "english"
 }: LeaderboardProps) {
     const router = useRouter();
@@ -56,7 +60,8 @@ export function Leaderboard({
 
     // Sync state with initial props or URL
     const activeTab = (searchParams.get("type") as "allTime" | "weekly" | "daily") || initialType;
-    const activeMode = (searchParams.get("mode2") as "15" | "60") || initialMode;
+    const activeMode = (searchParams.get("mode") as "time" | "words") || initialMode;
+    const activeConfig = searchParams.get("config") || initialConfig;
     const activeLanguage = (searchParams.get("lang") as "english" | "khmer") || initialLanguage;
 
     useEffect(() => {
@@ -64,7 +69,7 @@ export function Leaderboard({
 
         const fetchLeaderboard = async () => {
             setLoading(true);
-            const data = await getTopLeaderboard(50, activeTab, activeMode, activeLanguage);
+            const data = await getTopLeaderboard(50, activeTab, activeMode, activeConfig, activeLanguage);
             setEntries(data as LeaderboardEntry[]);
             setLoading(false);
         };
@@ -72,10 +77,11 @@ export function Leaderboard({
         fetchLeaderboard();
     }, [isOpen, activeTab, activeMode, activeLanguage]);
 
-    const updateQueryParams = (type: string, mode: string, lang: string) => {
+    const updateQueryParams = (type: string, mode: string, config: string, lang: string) => {
         const params = new URLSearchParams(searchParams.toString());
         params.set("type", type);
-        params.set("mode2", mode);
+        params.set("mode", mode);
+        params.set("config", config);
         params.set("lang", lang);
         router.push(`${pathname}?${params.toString()}`, { scroll: false });
     };
@@ -113,7 +119,7 @@ export function Leaderboard({
             {/* Header/Title */}
             <div className="flex items-center justify-between px-8 py-6 border-b border-white/5">
                 <h1 className="text-2xl md:text-3xl font-bold tracking-tight" style={{ color: theme.text }}>
-                    {activeTab === 'allTime' ? 'All-time' : activeTab === 'weekly' ? 'Weekly' : 'Daily'} {activeLanguage === 'english' ? 'English' : 'Khmer'} Time {activeMode} Leaderboard
+                    {activeTab === 'allTime' ? 'All-time' : activeTab === 'weekly' ? 'Weekly' : 'Daily'} {activeLanguage === 'english' ? 'English' : 'Khmer'} {activeMode} {activeConfig} Leaderboard
                 </h1>
                 {isModal && onClose && (
                     <button
@@ -138,7 +144,7 @@ export function Leaderboard({
                             ].map(lang => (
                                 <button
                                     key={lang.id}
-                                    onClick={() => updateQueryParams(activeTab, activeMode, lang.id)}
+                                    onClick={() => updateQueryParams(activeTab, activeMode, activeConfig, lang.id)}
                                     className={cn(
                                         "flex items-center gap-3 p-3 rounded-xl transition-all",
                                         activeLanguage === lang.id ? "bg-[#e2b714]" : "hover:bg-white/5"
@@ -165,7 +171,7 @@ export function Leaderboard({
                             ].map(tab => (
                                 <button
                                     key={tab.id}
-                                    onClick={() => updateQueryParams(tab.id, activeMode, activeLanguage)}
+                                    onClick={() => updateQueryParams(tab.id, activeMode, activeConfig, activeLanguage)}
                                     className={cn(
                                         "flex items-center gap-3 p-3 rounded-xl transition-all group",
                                         activeTab === tab.id ? "bg-[#e2b714]" : "hover:bg-white/5"
@@ -186,23 +192,49 @@ export function Leaderboard({
                         <h3 className="hidden md:block text-[10px] uppercase tracking-[0.2em] font-black opacity-20 px-4">Mode</h3>
                         <div className="flex flex-col gap-1">
                             {[
-                                { id: '15', label: 'time 15', icon: Clock },
-                                { id: '60', label: 'time 60', icon: Clock },
-                            ].map(mode => (
+                                { id: 'time', label: 'time', icon: Clock },
+                                { id: 'words', label: 'words', icon: Type },
+                            ].map(m => (
                                 <button
-                                    key={mode.id}
-                                    onClick={() => updateQueryParams(activeTab, mode.id, activeLanguage)}
+                                    key={m.id}
+                                    onClick={() => {
+                                        const nextConfig = m.id === 'time' ? '15' : '25';
+                                        updateQueryParams(activeTab, m.id, nextConfig, activeLanguage);
+                                    }}
                                     className={cn(
                                         "flex items-center gap-3 p-3 rounded-xl transition-all",
-                                        activeMode === mode.id ? "bg-[#e2b714]" : "hover:bg-white/5"
+                                        activeMode === m.id ? "bg-[#e2b714]" : "hover:bg-white/5"
                                     )}
                                     style={{
-                                        backgroundColor: activeMode === mode.id ? theme.primary : undefined,
-                                        color: activeMode === mode.id ? theme.bg : theme.textDim
+                                        backgroundColor: activeMode === m.id ? theme.primary : undefined,
+                                        color: activeMode === m.id ? theme.bg : theme.textDim
                                     }}
                                 >
-                                    <mode.icon className="w-5 h-5 shrink-0" />
-                                    <span className="hidden md:block font-bold text-sm tracking-tight">{mode.label}</span>
+                                    <m.icon className="w-5 h-5 shrink-0" />
+                                    <span className="hidden md:block font-bold text-sm tracking-tight">{m.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <h3 className="hidden md:block text-[10px] uppercase tracking-[0.2em] font-black opacity-20 px-4">Config</h3>
+                        <div className="flex flex-col gap-1">
+                            {(activeMode === 'time' ? ['15', '30', '60', '120'] : ['10', '25', '50', '100']).map(conf => (
+                                <button
+                                    key={conf}
+                                    onClick={() => updateQueryParams(activeTab, activeMode, conf, activeLanguage)}
+                                    className={cn(
+                                        "flex items-center gap-3 p-3 rounded-xl transition-all",
+                                        activeConfig === conf ? "bg-[#e2b714]" : "hover:bg-white/5"
+                                    )}
+                                    style={{
+                                        backgroundColor: activeConfig === conf ? theme.primary : undefined,
+                                        color: activeConfig === conf ? theme.bg : theme.textDim
+                                    }}
+                                >
+                                    <List className="w-5 h-5 shrink-0" />
+                                    <span className="hidden md:block font-bold text-sm tracking-tight">{conf}</span>
                                 </button>
                             ))}
                         </div>
@@ -219,6 +251,7 @@ export function Leaderboard({
                                     <th className="px-4 py-2">name</th>
                                     <th className="px-4 py-2 text-right">wpm</th>
                                     <th className="px-4 py-2 text-right">accuracy</th>
+                                    <th className="px-4 py-2 text-right">consistency</th>
                                     <th className="px-4 py-2 text-right md:table-cell hidden">raw</th>
                                     <th className="px-4 py-2 text-right md:table-cell hidden">date</th>
                                 </tr>
@@ -238,7 +271,15 @@ export function Leaderboard({
                                                 <td className="px-4 py-3 text-center rounded-l-2xl">
                                                     {index === 0 ? (
                                                         <div className="flex justify-center">
-                                                            <Trophy className="w-5 h-5" style={{ color: theme.primary }} />
+                                                            <Trophy className="w-5 h-5" style={{ color: '#e2b714' }} />
+                                                        </div>
+                                                    ) : index === 1 ? (
+                                                        <div className="flex justify-center">
+                                                            <Medal className="w-5 h-5" style={{ color: '#d1d5db' }} />
+                                                        </div>
+                                                    ) : index === 2 ? (
+                                                        <div className="flex justify-center">
+                                                            <Medal className="w-5 h-5" style={{ color: '#9a3412' }} />
                                                         </div>
                                                     ) : (
                                                         <span className="font-mono text-sm opacity-30">{index + 1}</span>
@@ -246,24 +287,32 @@ export function Leaderboard({
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                                                        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0 overflow-hidden">
                                                             {entry.image ? (
-                                                                <img src={entry.image} alt="" className="w-full h-full rounded-full" />
+                                                                <img src={entry.image} alt="" className="w-full h-full object-cover" />
                                                             ) : (
                                                                 <User className="w-4 h-4 opacity-50" />
                                                             )}
                                                         </div>
-                                                        <span className="font-bold tracking-tight truncate max-w-[120px] md:max-w-none">{entry.name}</span>
+                                                        <div className="flex flex-col">
+                                                            <span className="font-bold tracking-tight truncate max-w-[120px] md:max-w-none">{entry.name}</span>
+                                                            <span className="text-[10px] opacity-30 font-black uppercase">Lvl {entry.level || 1}</span>
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-3 text-right">
-                                                    <span className="text-lg font-black italic tracking-tighter" style={{ color: theme.primary }}>
-                                                        {entry.wpm.toFixed(2)}
+                                                    <span className="text-lg font-black italic tracking-tighter" style={{ color: index < 3 ? theme.primary : theme.text }}>
+                                                        {entry.wpm.toFixed(1)}
                                                     </span>
                                                 </td>
                                                 <td className="px-4 py-3 text-right">
                                                     <span className="font-bold tabular-nums">
-                                                        {entry.accuracy.toFixed(2)}%
+                                                        {entry.accuracy.toFixed(0)}%
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    <span className="opacity-50 tabular-nums">
+                                                        {entry.consistency ? `${entry.consistency.toFixed(0)}%` : '-'}
                                                     </span>
                                                 </td>
                                                 <td className="px-4 py-3 text-right md:table-cell hidden">

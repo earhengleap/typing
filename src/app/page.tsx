@@ -209,6 +209,37 @@ const PerformanceChart = React.memo(({ data, theme }: { data: ChartPoint[], them
     );
 });
 
+// --- KBD Component ---
+const Kbd = ({ children, activeTheme }: { children: React.ReactNode, activeTheme: any }) => (
+    <span
+        className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-md font-mono font-bold text-[10px] min-w-[20px] transition-all"
+        style={{
+            backgroundColor: activeTheme.bgAlt,
+            color: activeTheme.primary,
+            borderBottom: `2px solid ${activeTheme.textDim}30`,
+            boxShadow: `0 1px 0 ${activeTheme.bg}`
+        }}
+    >
+        {children}
+    </span>
+);
+
+const ShortcutHint = ({ keys, label, activeTheme }: { keys: string[], label: string, activeTheme: any }) => (
+    <div className="flex items-center gap-2 group cursor-default">
+        <div className="flex items-center gap-1">
+            {keys.map((key, i) => (
+                <React.Fragment key={i}>
+                    <Kbd activeTheme={activeTheme}>{key}</Kbd>
+                    {i < keys.length - 1 && <span className="text-[10px] opacity-20">+</span>}
+                </React.Fragment>
+            ))}
+        </div>
+        <span className="text-[10px] uppercase tracking-[0.1em] font-black opacity-30 group-hover:opacity-60 transition-opacity">
+            {label}
+        </span>
+    </div>
+);
+
 // --- Word Component ---
 const Word = React.memo(({
     group,
@@ -430,6 +461,7 @@ export default function MonkeyTypePage() {
     useEffect(() => { startTimeRef.current = startTime; }, [startTime]);
 
     const inputRef = useRef<HTMLInputElement>(null);
+    const keystrokeTimes = useRef<number[]>([]);
     const wordsRef = useRef<HTMLDivElement>(null);
     const charRefs = useRef<(HTMLSpanElement | null)[]>([]);
     const ghostTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -584,9 +616,24 @@ export default function MonkeyTypePage() {
     const finishTest = () => {
         setIsActive(false);
         setIsFinished(true);
+        setGhost(null); // Clear ghost on finish
 
         const elapsedMs = Date.now() - (startTime || Date.now());
         const durationSeconds = Math.floor(elapsedMs / 1000);
+
+        // Calculate Consistency
+        let consistency = 0;
+        if (keystrokeTimes.current.length > 2) {
+            const offsets = [];
+            for (let i = 1; i < keystrokeTimes.current.length; i++) {
+                offsets.push(keystrokeTimes.current[i] - keystrokeTimes.current[i - 1]);
+            }
+            const mean = offsets.reduce((a, b) => a + b, 0) / offsets.length;
+            const variance = offsets.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / offsets.length;
+            const stdDev = Math.sqrt(variance);
+            const cv = stdDev / mean;
+            consistency = Math.max(0, Math.min(100, Math.round(100 * (1 - cv))));
+        }
 
         addHistory({
             wpm: stats.wpm,
@@ -596,6 +643,7 @@ export default function MonkeyTypePage() {
             config,
             language,
             theme,
+            consistency,
         });
 
         // Save to Database
@@ -603,6 +651,7 @@ export default function MonkeyTypePage() {
             wpm: stats.wpm,
             rawWpm: stats.rawWpm,
             accuracy: stats.accuracy,
+            consistency: consistency,
             mode,
             config,
             language,
@@ -622,9 +671,9 @@ export default function MonkeyTypePage() {
         if (stats.wpm > 0) {
             const currentMode = config.toString();
             // Save to all-time, weekly, and daily categories with the current language
-            saveLeaderboardResult(stats.wpm, stats.accuracy, stats.rawWpm, "allTime", currentMode, language);
-            saveLeaderboardResult(stats.wpm, stats.accuracy, stats.rawWpm, "weekly", currentMode, language);
-            saveLeaderboardResult(stats.wpm, stats.accuracy, stats.rawWpm, "daily", currentMode, language);
+            saveLeaderboardResult(stats.wpm, stats.accuracy, stats.rawWpm, consistency, "allTime", mode, currentMode, language);
+            saveLeaderboardResult(stats.wpm, stats.accuracy, stats.rawWpm, consistency, "weekly", mode, currentMode, language);
+            saveLeaderboardResult(stats.wpm, stats.accuracy, stats.rawWpm, consistency, "daily", mode, currentMode, language);
         }
     };
 
@@ -635,6 +684,9 @@ export default function MonkeyTypePage() {
 
         setUserInput(value);
         playClickSound();
+
+        // Track keystroke time for consistency
+        keystrokeTimes.current.push(Date.now());
 
         // Calculate live stats
         let correct = 0;
@@ -672,7 +724,7 @@ export default function MonkeyTypePage() {
             wpm,
             rawWpm,
             accuracy: value.length > 0 ? Math.round((correct / (correct + incorrect + extra)) * 100) : 100,
-            consistency: 80 // Placeholder for now, could be calculated from chart data variance
+            consistency: 0
         });
 
         if (mode === "words" && value.length >= targetText.length) {
@@ -696,12 +748,15 @@ export default function MonkeyTypePage() {
         generateWords(targetMode, targetConfig, targetLang);
         setUserInput("");
         setStartTime(null);
+        keystrokeTimes.current = [];
         setActiveKeys(new Set());
         setErrorKey(null);
         setIsShiftPressed(false);
         resetLiveState(targetMode === "time" ? (targetConfig as number) : 30);
         setLineOffset(0);
         setCaretPos({ top: 0, left: 0 });
+        setGhost(null); // Clear ghost on reset
+        setGhostPos({ top: 0, left: 0, charIndex: 0 });
         setXpResult(null);
         setTimeout(() => inputRef.current?.focus(), 50);
     }, [generateWords, mode, config, language, resetLiveState]);
@@ -783,7 +838,7 @@ export default function MonkeyTypePage() {
                 return;
             }
 
-            if (e.key === "Escape") {
+            if (e.key === "Escape" || (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "p")) {
                 e.preventDefault();
                 setIsSearchOpen(true);
                 setSearchQuery("");
@@ -1354,16 +1409,32 @@ export default function MonkeyTypePage() {
                                             {/* Ghost Caret */}
                                             {ghost && isActive && (
                                                 <motion.div
-                                                    animate={{ top: ghostPos.top, left: ghostPos.left }}
-                                                    transition={{ type: "spring", stiffness: 100, damping: 20 }}
-                                                    className="absolute w-[2px] rounded-full z-[5] pointer-events-none opacity-40 flex flex-col items-center"
+                                                    animate={{
+                                                        top: ghostPos.top,
+                                                        left: ghostPos.left,
+                                                        opacity: [0.15, 0.25, 0.15]
+                                                    }}
+                                                    transition={{
+                                                        top: { type: "spring", stiffness: 100, damping: 20 },
+                                                        left: { type: "spring", stiffness: 100, damping: 20 },
+                                                        opacity: { duration: 3, repeat: Infinity, ease: "easeInOut" }
+                                                    }}
+                                                    className="absolute w-[1.5px] rounded-full z-0 pointer-events-none flex flex-col items-center"
                                                     style={{
-                                                        backgroundColor: activeTheme.text,
+                                                        backgroundColor: activeTheme.textDim,
                                                         height: language === "khmer" ? '34px' : `${fontSize * 1.1}px`,
                                                         marginTop: language === "khmer" ? '6px' : `${fontSize * 0.25}px`,
                                                     }}
                                                 >
-                                                    <div className="absolute bottom-full mb-1 whitespace-nowrap text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-black/40 text-white backdrop-blur-sm border border-white/10 scale-90 origin-bottom">
+                                                    <div
+                                                        className="absolute bottom-full mb-3 whitespace-nowrap text-[7px] font-black uppercase tracking-[0.25em] px-2 py-0.5 rounded-full border flex items-center gap-1.5 opacity-30 group"
+                                                        style={{
+                                                            backgroundColor: `${activeTheme.bg}dd`,
+                                                            color: activeTheme.textDim,
+                                                            borderColor: `${activeTheme.textDim}20`
+                                                        }}
+                                                    >
+                                                        <div className="w-1 h-1 rounded-full animate-pulse" style={{ backgroundColor: activeTheme.textDim }} />
                                                         {ghost.userName || "Ghost"}
                                                     </div>
                                                 </motion.div>
@@ -1518,9 +1589,17 @@ export default function MonkeyTypePage() {
 
 
                                 <div className="flex flex-col items-center gap-3 sm:gap-6 mt-2 sm:mt-4">
-                                    <div className="hidden sm:flex text-xs font-bold tracking-[0.2em] uppercase gap-8" style={{ color: activeTheme.textDim }}>
-                                        <span><span className="text-[var(--mt-primary)] font-bold px-1.5 py-0.5 rounded mr-1" style={{ backgroundColor: 'var(--mt-bg-alt)' }}>Tab</span> + <span className="text-[var(--mt-primary)] font-bold px-1.5 py-0.5 rounded ml-1" style={{ backgroundColor: 'var(--mt-bg-alt)' }}>Enter</span> Restart</span>
-                                        <span><span className="text-[var(--mt-primary)] font-bold px-1.5 py-0.5 rounded mr-1" style={{ backgroundColor: 'var(--mt-bg-alt)' }}>Esc</span> Quick Reset</span>
+                                    <div className="hidden sm:flex items-center gap-10">
+                                        <ShortcutHint
+                                            keys={["tab", "enter"]}
+                                            label="restart"
+                                            activeTheme={activeTheme}
+                                        />
+                                        <ShortcutHint
+                                            keys={["esc", "ctrl", "shift", "p"]}
+                                            label="command line"
+                                            activeTheme={activeTheme}
+                                        />
                                     </div>
 
                                     <button
@@ -1746,12 +1825,18 @@ export default function MonkeyTypePage() {
                         </div>
 
                         {/* Bottom — Restart hint + button */}
-                        <div className="flex items-center justify-center gap-4 sm:gap-6 pt-4 border-t" style={{ borderColor: `${activeTheme.textDim}15` }}>
-                            <div className="hidden sm:flex items-center gap-2 text-[11px] font-mono opacity-30" style={{ color: activeTheme.textDim }}>
-                                <span className="px-2 py-0.5 rounded" style={{ backgroundColor: activeTheme.bgAlt, color: activeTheme.primary }}>tab</span>
-                                <span>+</span>
-                                <span className="px-2 py-0.5 rounded" style={{ backgroundColor: activeTheme.bgAlt, color: activeTheme.primary }}>enter</span>
-                                <span>to restart</span>
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-12 pt-6 border-t" style={{ borderColor: `${activeTheme.textDim}15` }}>
+                            <div className="hidden sm:flex items-center gap-10">
+                                <ShortcutHint
+                                    keys={["tab", "enter"]}
+                                    label="restart"
+                                    activeTheme={activeTheme}
+                                />
+                                <ShortcutHint
+                                    keys={["esc", "ctrl", "shift", "p"]}
+                                    label="command line"
+                                    activeTheme={activeTheme}
+                                />
                             </div>
 
                             <motion.button

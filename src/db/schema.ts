@@ -106,6 +106,7 @@ export const typingResults = pgTable("typing_result", {
     wpm: integer("wpm").notNull(),
     rawWpm: integer("raw_wpm").notNull(),
     accuracy: integer("accuracy").notNull(),
+    consistency: integer("consistency"),
     mode: varchar("mode", { length: 50 }).notNull(),
     config: integer("config").notNull(),
     language: varchar("language", { length: 50 }).notNull(),

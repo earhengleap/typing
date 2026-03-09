@@ -172,7 +172,7 @@ export default function ResetPasswordPage() {
 
             {/* Top Navigation */}
             <header className="p-8 z-20">
-                <Link href="/login" className="flex items-center gap-2 group transition-opacity hover:opacity-80 cursor-pointer w-fit">
+                <Link href="/" className="flex items-center gap-2 group transition-opacity hover:opacity-80 cursor-pointer w-fit">
                     <ArrowLeft size={18} style={{ color: activeTheme.primary }} />
                     <span className="text-xl font-bold tracking-tighter" style={{ color: activeTheme.text }}>
                         typeflow<span style={{ color: activeTheme.primary }}>.</span>
@@ -187,6 +187,16 @@ export default function ResetPasswordPage() {
             }>
                 <ResetPasswordContent />
             </Suspense>
+
+            <footer className="p-12 text-center text-[10px] tracking-widest uppercase opacity-20 flex flex-col gap-4 z-10">
+                <div className="flex justify-center gap-8">
+                    <button className="hover:opacity-100 transition-opacity cursor-pointer">about</button>
+                    <button className="hover:opacity-100 transition-opacity cursor-pointer">contact</button>
+                    <button className="hover:opacity-100 transition-opacity cursor-pointer">terms</button>
+                    <button className="hover:opacity-100 transition-opacity cursor-pointer">privacy</button>
+                </div>
+                <Link href="/" className="hover:opacity-100 transition-opacity cursor-pointer">typeflow &copy; 2026</Link>
+            </footer>
         </div>
     );
 }

@@ -34,6 +34,7 @@ export interface RunHistory {
     config: number;
     language: Language;
     theme: Theme;
+    consistency: number;
     date: number;
 }
 

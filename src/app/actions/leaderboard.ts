@@ -3,17 +3,19 @@
 import { redis } from "@/db/redis";
 import { auth } from "@/auth";
 
-const getLeaderboardKeys = (type: string, mode: string, language: string) => ({
-    wpm: `typing_leaderboard_${language}_${type}_${mode}_wpm`,
-    metadata: `typing_leaderboard_${language}_${type}_${mode}_metadata`
+const getLeaderboardKeys = (type: string, gameMode: string, config: string, language: string) => ({
+    wpm: `typing_leaderboard_${language}_${gameMode}_${config}_${type}_wpm`,
+    metadata: `typing_leaderboard_${language}_${gameMode}_${config}_${type}_metadata`
 });
 
 export async function saveLeaderboardResult(
     wpm: number,
     accuracy: number,
     rawWpm: number,
+    consistency: number,
     type: "allTime" | "weekly" | "daily" = "allTime",
-    mode: string = "15",
+    gameMode: string = "time",
+    config: string = "15",
     language: string = "english"
 ) {
     const session = await auth();
@@ -25,8 +27,9 @@ export async function saveLeaderboardResult(
 
     const userName = session.user.name || "Anonymous";
     const userImage = session.user.image || "";
+    const userLevel = (session.user as any).level || 1;
 
-    const { wpm: wpmKey, metadata: metaKey } = getLeaderboardKeys(type, mode, language);
+    const { wpm: wpmKey, metadata: metaKey } = getLeaderboardKeys(type, gameMode, config, language);
 
     try {
         // Only update if it's the user's best WPM for this category/mode/language
@@ -39,9 +42,11 @@ export async function saveLeaderboardResult(
                 userId,
                 name: userName,
                 image: userImage,
+                level: userLevel,
                 wpm,
                 accuracy,
                 rawWpm,
+                consistency,
                 date: new Date().toISOString()
             };
 
@@ -56,14 +61,15 @@ export async function saveLeaderboardResult(
 }
 
 export async function getTopLeaderboard(
-    limit = 25,
+    limit = 50,
     type: "allTime" | "weekly" | "daily" = "allTime",
-    mode: string = "15",
+    gameMode: string = "time",
+    config: string = "15",
     language: string = "english"
 ) {
     if (!process.env.UPSTASH_REDIS_REST_URL) return [];
 
-    const { wpm: wpmKey, metadata: metaKey } = getLeaderboardKeys(type, mode, language);
+    const { wpm: wpmKey, metadata: metaKey } = getLeaderboardKeys(type, gameMode, config, language);
 
     try {
         const userIds = await redis.zrange(wpmKey, 0, limit - 1, {

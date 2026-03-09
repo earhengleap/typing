@@ -442,7 +442,7 @@ export default function LoginPage() {
                     <button className="hover:opacity-100 transition-opacity cursor-pointer">terms</button>
                     <button className="hover:opacity-100 transition-opacity cursor-pointer">privacy</button>
                 </div>
-                <div>typeflow &copy; 2026</div>
+                <Link href="/" className="hover:opacity-100 transition-opacity cursor-pointer">typeflow &copy; 2026</Link>
             </footer>
         </div>
     );

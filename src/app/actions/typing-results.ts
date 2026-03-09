@@ -6,7 +6,7 @@ import { typingResults, users, userAchievements } from "@/db/schema";
 import { desc, eq, sql, and } from "drizzle-orm";
 import type { RunHistory } from "@/hooks/use-monkeytype-store";
 
-export async function saveTypingResult(run: Omit<RunHistory, "id" | "date"> & { duration: number }) {
+export async function saveTypingResult(run: Omit<RunHistory, "id" | "date"> & { duration: number; consistency: number }) {
     const session = await auth();
     if (!session?.user?.id) return { success: false, error: "Unauthorized" };
 
@@ -17,6 +17,7 @@ export async function saveTypingResult(run: Omit<RunHistory, "id" | "date"> & { 
             wpm: run.wpm,
             rawWpm: run.rawWpm,
             accuracy: run.accuracy,
+            consistency: run.consistency,
             mode: run.mode,
             config: run.config,
             language: run.language,
@@ -256,10 +257,13 @@ export async function updateUserSettings(settings: any) {
 }
 export async function getGhostRun(mode: string, config: number, language: string) {
     try {
+        const session = await auth();
+
         const results = await db
             .select({
                 wpm: typingResults.wpm,
                 accuracy: typingResults.accuracy,
+                userId: typingResults.userId,
                 userName: users.name,
             })
             .from(typingResults)
@@ -269,14 +273,26 @@ export async function getGhostRun(mode: string, config: number, language: string
                     eq(typingResults.mode, mode),
                     eq(typingResults.config, config),
                     eq(typingResults.language, language),
-                    sql`${typingResults.wpm} > 10` // Only grab decent ghosts
+                    sql`${typingResults.wpm} > 10`
                 )
             )
             .orderBy(sql`RANDOM()`)
             .limit(1);
 
         if (results.length > 0) {
-            return { success: true, ghost: results[0] };
+            const ghost = results[0];
+            // If it's the current user's run, show "Personal Best" (or similar), 
+            // otherwise show "Ghost" for privacy as requested.
+            const isMe = session?.user?.id === ghost.userId;
+
+            return {
+                success: true,
+                ghost: {
+                    wpm: ghost.wpm,
+                    accuracy: ghost.accuracy,
+                    userName: isMe ? "Your Personal Best" : "Ghost"
+                }
+            };
         }
         return { success: false, error: "No ghosts found" };
     } catch (error) {
