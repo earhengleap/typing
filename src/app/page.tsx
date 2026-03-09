@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RotateCcw, Timer, Keyboard as KeyboardIcon, Type, Globe, Search, Trophy, Zap } from "lucide-react";
+import { RotateCcw, Timer, Keyboard as KeyboardIcon, Type, Globe, Search, Trophy, Zap, MousePointer2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMonkeyTypeStore, GameMode, GameConfig, Language, Theme, ChartPoint } from "@/hooks/use-monkeytype-store";
 import { THEMES } from "@/constants/themes";
@@ -1042,7 +1042,11 @@ export default function MonkeyTypePage() {
                 "pt-2 sm:pt-4 md:pt-8 px-[var(--content-px)]",
                 language === "khmer" ? "font-sans font-medium" : "font-mono"
             )}
-            onClick={() => inputRef.current?.focus()}
+            onClick={() => {
+                if (isFocused) {
+                    inputRef.current?.blur();
+                }
+            }}
             style={{
                 backgroundColor: activeTheme.bg,
                 color: activeTheme.textDim,
@@ -1302,7 +1306,11 @@ export default function MonkeyTypePage() {
 
                                 {/* 3-Line Typing Window */}
                                 <div
-                                    className="relative overflow-hidden w-full px-1 sm:px-4 typing-fade-bottom transition-all"
+                                    className="relative overflow-hidden w-full px-1 sm:px-4 typing-fade-bottom transition-all cursor-text"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        inputRef.current?.focus();
+                                    }}
                                     style={{
                                         height: language === "khmer" ? "174px" : `${fontSize * 1.6 * 3}px`,
                                     }}
@@ -1423,11 +1431,22 @@ export default function MonkeyTypePage() {
                                                 className="absolute inset-0 z-20 flex items-center justify-center cursor-pointer rounded-lg"
                                                 onClick={() => inputRef.current?.focus()}
                                             >
-                                                <div className="flex items-center gap-3 text-base font-normal tracking-normal" style={{ color: activeTheme.text }}>
-                                                    <svg width="14" height="14" viewBox="0 0 512 512" fill="currentColor">
-                                                        <path d="M302.189 329.126l16.297-39.757 141.6 141.6c11.31 11.31 11.31 29.65 0 40.96a28.84 28.84 0 01-20.48 8.48c-7.394 0-14.788-2.827-20.48-8.48L277.53 330.334l-39.757 16.297L134.453 0z" />
-                                                    </svg>
-                                                    Click here or press any key to focus
+                                                <div className="flex items-center gap-3 text-base font-medium tracking-tight" style={{ color: activeTheme.text }}>
+                                                    <motion.div
+                                                        animate={{
+                                                            scale: [1, 1.2, 1],
+                                                            opacity: [0.7, 1, 0.7]
+                                                        }}
+                                                        transition={{
+                                                            duration: 2,
+                                                            repeat: Infinity,
+                                                            ease: "easeInOut"
+                                                        }}
+                                                        style={{ color: activeTheme.primary }}
+                                                    >
+                                                        <MousePointer2 size={18} fill="currentColor" className="opacity-80" />
+                                                    </motion.div>
+                                                    <span className="opacity-80">Click here or press any key to focus</span>
                                                 </div>
                                             </motion.div>
                                         )}
@@ -1435,7 +1454,13 @@ export default function MonkeyTypePage() {
                                 </div>
 
                                 {/* Keyboard — Desktop only */}
-                                <div className="hidden md:block">
+                                <div
+                                    className="hidden md:block"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        inputRef.current?.focus();
+                                    }}
+                                >
                                     {(() => {
                                         // Always show next key to press, updating as the user types
                                         const remainingTarget = targetText.slice(userInput.length);
