@@ -27,7 +27,7 @@ export function Header({ activeTheme }: HeaderProps) {
                         </h1>
                     </Link>
 
-                    <div className="flex-1" />
+                    <div className="flex-1" suppressHydrationWarning />
 
                     <div className="flex items-center gap-1 sm:gap-2 justify-end flex-1 z-20">
                         <Link href="/leaderboards">

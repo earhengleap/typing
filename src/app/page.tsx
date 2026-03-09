@@ -435,7 +435,13 @@ export default function MonkeyTypePage() {
     const ghostTimerRef = useRef<NodeJS.Timeout | null>(null);
     const restartRef = useRef<HTMLButtonElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const [hasMounted, setHasMounted] = useState(false);
+    const wasTabPressedRef = useRef(false);
+    useEffect(() => {
+        setHasMounted(true);
+    }, []);
 
+    // Load theme and other persisted settings
     const activeTheme = THEMES[theme] || THEMES.codex;
 
     // --- Search / Command Palette Logic ---
@@ -882,7 +888,7 @@ export default function MonkeyTypePage() {
                         let matchedQwerty = key;
                         for (const [qKey, chars] of Object.entries(KHMER_KEY_MAP)) {
                             // On keyup, e.key might be the base or shift char depending on current state
-                            // More robust is to use e.code for single char keys if possible, 
+                            // More robust is to use e.code for single char keys if possible,
                             // but our layout uses qKeys which are usually the key property
                             if (chars.base === e.key || chars.shift === e.key) {
                                 matchedQwerty = qKey;
@@ -1016,6 +1022,18 @@ export default function MonkeyTypePage() {
             }
         }
     }, [userInput, words, clusters, clusterIndexes, lineOffset]);
+
+    if (!hasMounted) {
+        return (
+            <div className="min-h-screen theme-transition flex flex-col items-center justify-center" style={{ backgroundColor: THEMES.codex.bg }}>
+                {/* Minimal loader or skeleton while hydrating */}
+                <div className="flex items-center gap-2">
+                    <Type className="w-8 h-8 animate-pulse" style={{ color: THEMES.codex.primary }} />
+                    <h1 className="text-[32px] tracking-tight font-bold" style={{ color: THEMES.codex.text }}>type<span style={{ color: THEMES.codex.textDim }}>flow</span></h1>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div
@@ -1230,249 +1248,275 @@ export default function MonkeyTypePage() {
                             </div>
                         </div>
 
-                        {/* Caps Lock Warning — like monkeytype.com */}
-                        <AnimatePresence>
-                            {isCapsLock && (
-                                <motion.div
-                                    key="capslock"
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: 'auto' }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    transition={{ duration: 0.15 }}
-                                    className="flex items-center justify-center gap-2 overflow-hidden"
-                                >
-                                    <div
-                                        className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold tracking-wider uppercase"
-                                        style={{
-                                            color: activeTheme.error,
-                                            backgroundColor: `${activeTheme.error}15`,
-                                        }}
-                                    >
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M12 17v.01" />
-                                            <path d="M12 13V7" />
-                                            <circle cx="12" cy="12" r="10" />
-                                        </svg>
-                                        <span>caps lock</span>
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-
-                        <div className="h-8 flex justify-center items-center gap-4">
-                            {isActive && (
-                                <>
-                                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-3xl font-bold transition-colors duration-500" style={{ color: activeTheme.primary }}>
-                                        {mode === "time" ? timeLeft : `${userInput.split(" ").length - 1}/${config}`}
-                                    </motion.div>
-                                    {showLiveWpm && stats.wpm > 0 && (
-                                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 0.8 }} className="text-xl font-bold transition-colors duration-500" style={{ color: activeTheme.text }}>
-                                            {stats.wpm} wpm
+                        <div className="relative w-full flex flex-col gap-4 sm:gap-6 md:gap-10 lg:gap-12">
+                            {/* Inner Container (No longer blurred here) */}
+                            <div className="w-full flex flex-col gap-4 sm:gap-6 md:gap-10 lg:gap-12 transition-all">
+                                {/* Caps Lock Warning — like monkeytype.com */}
+                                <AnimatePresence>
+                                    {isCapsLock && (
+                                        <motion.div
+                                            key="capslock"
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: 1, height: 'auto' }}
+                                            exit={{ opacity: 0, height: 0 }}
+                                            transition={{ duration: 0.15 }}
+                                            className="flex items-center justify-center gap-2 overflow-hidden"
+                                        >
+                                            <div
+                                                className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold tracking-wider uppercase"
+                                                style={{
+                                                    color: activeTheme.error,
+                                                    backgroundColor: `${activeTheme.error}15`,
+                                                }}
+                                            >
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M12 17v.01" />
+                                                    <path d="M12 13V7" />
+                                                    <circle cx="12" cy="12" r="10" />
+                                                </svg>
+                                                <span>caps lock</span>
+                                            </div>
                                         </motion.div>
                                     )}
-                                    {showLiveAccuracy && stats.accuracy > 0 && (
-                                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 0.5 }} className="text-lg font-bold transition-colors duration-500" style={{ color: activeTheme.textDim }}>
-                                            {stats.accuracy}%
-                                        </motion.div>
-                                    )}
-                                </>
-                            )}
-                        </div>
+                                </AnimatePresence>
 
-                        {/* 3-Line Typing Window */}
-                        <div
-                            className="relative overflow-hidden w-full px-1 sm:px-4 transition-all duration-500 typing-fade-bottom"
-                            style={{
-                                height: language === "khmer" ? "174px" : `${fontSize * 1.6 * 3}px`,
-                            }}
-                        >
-                            <motion.div
-                                animate={{ y: lineOffset }}
-                                transition={userInput.length === 0 ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 30 }}
-                                ref={wordsRef}
-                                className="relative tracking-tight"
-                                style={{
-                                    fontSize: language === "khmer" ? 'var(--khmer-font-size)' : `${fontSize}px`,
-                                    lineHeight: language === "khmer" ? 'var(--khmer-line-height)' : `${fontSize * 1.6}px`,
-                                    fontFamily: fontFamily === 'monospace' ? 'inherit' : fontFamily
-                                }}
-                            >
-                                {/* Smooth Caret */}
-                                <motion.div
-                                    animate={{ top: caretPos.top, left: caretPos.left }}
-                                    transition={userInput.length === 0 ? { duration: 0 } : { type: "spring", stiffness: 500, damping: 35 }}
-                                    className={cn(
-                                        "absolute w-[2.5px] rounded-full z-10 pointer-events-none will-change-transform",
-                                        !isActive && "caret-idle"
+                                <div className="h-8 flex justify-center items-center gap-4">
+                                    {isActive && (
+                                        <>
+                                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-3xl font-bold transition-colors duration-500" style={{ color: activeTheme.primary }}>
+                                                {mode === "time" ? timeLeft : `${userInput.split(" ").length - 1}/${config}`}
+                                            </motion.div>
+                                            {showLiveWpm && stats.wpm > 0 && (
+                                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 0.8 }} className="text-xl font-bold transition-colors duration-500" style={{ color: activeTheme.text }}>
+                                                    {stats.wpm} wpm
+                                                </motion.div>
+                                            )}
+                                            {showLiveAccuracy && stats.accuracy > 0 && (
+                                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 0.5 }} className="text-lg font-bold transition-colors duration-500" style={{ color: activeTheme.textDim }}>
+                                                    {stats.accuracy}%
+                                                </motion.div>
+                                            )}
+                                        </>
                                     )}
+                                </div>
+
+                                {/* 3-Line Typing Window */}
+                                <div
+                                    className="relative overflow-hidden w-full px-1 sm:px-4 typing-fade-bottom transition-all"
                                     style={{
-                                        backgroundColor: 'var(--mt-primary)',
-                                        height: language === "khmer" ? '34px' : `${fontSize * 1.1}px`,
-                                        marginTop: language === "khmer" ? '6px' : `${fontSize * 0.25}px`,
+                                        height: language === "khmer" ? "174px" : `${fontSize * 1.6 * 3}px`,
                                     }}
-                                />
-
-                                {/* Ghost Caret */}
-                                {ghost && isActive && (
-                                    <motion.div
-                                        animate={{ top: ghostPos.top, left: ghostPos.left }}
-                                        transition={{ type: "spring", stiffness: 100, damping: 20 }}
-                                        className="absolute w-[2px] rounded-full z-[5] pointer-events-none opacity-40 flex flex-col items-center"
+                                >
+                                    {/* Inner blurred wrapper */}
+                                    <div
+                                        className="w-full h-full transition-all"
                                         style={{
-                                            backgroundColor: activeTheme.text,
-                                            height: language === "khmer" ? '34px' : `${fontSize * 1.1}px`,
-                                            marginTop: language === "khmer" ? '6px' : `${fontSize * 0.25}px`,
+                                            filter: (!isFocused && !isFinished) ? 'blur(2.5px)' : 'none',
+                                            opacity: (!isFocused && !isFinished) ? 0.25 : 1,
+                                            transition: 'all 0.25s ease',
                                         }}
                                     >
-                                        <div className="absolute bottom-full mb-1 whitespace-nowrap text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-black/40 text-white backdrop-blur-sm border border-white/10 scale-90 origin-bottom">
-                                            {ghost.userName || "Ghost"}
-                                        </div>
-                                    </motion.div>
-                                )}
+                                        <motion.div
+                                            animate={{ y: lineOffset }}
+                                            transition={userInput.length === 0 ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 30 }}
+                                            ref={wordsRef}
+                                            className="relative tracking-tight"
+                                            style={{
+                                                fontSize: language === "khmer" ? 'var(--khmer-font-size)' : `${fontSize}px`,
+                                                lineHeight: language === "khmer" ? 'var(--khmer-line-height)' : `${fontSize * 1.6}px`,
+                                                fontFamily: fontFamily === 'monospace' ? 'inherit' : fontFamily
+                                            }}
+                                        >
+                                            {/* Smooth Caret */}
+                                            <motion.div
+                                                animate={{ top: caretPos.top, left: caretPos.left }}
+                                                transition={userInput.length === 0 ? { duration: 0 } : { type: "spring", stiffness: 500, damping: 35 }}
+                                                className={cn(
+                                                    "absolute w-[2.5px] rounded-full z-10 pointer-events-none will-change-transform",
+                                                    !isActive && "caret-idle"
+                                                )}
+                                                style={{
+                                                    backgroundColor: 'var(--mt-primary)',
+                                                    height: language === "khmer" ? '34px' : `${fontSize * 1.1}px`,
+                                                    marginTop: language === "khmer" ? '6px' : `${fontSize * 0.25}px`,
+                                                    transition: 'all 0.1s ease',
+                                                }}
+                                            />
 
-                                {/* Words Grid */}
-                                <div className={cn("flex flex-wrap w-full", language === "khmer" ? "font-hanuman" : "")}>
-                                    {wordGroups.map((group, groupIdx) => {
-                                        const wordStart = clusterIndexes[group[0]];
-                                        const wordEnd = clusterIndexes[group[group.length - 1]] + clusters[group[group.length - 1]].length;
+                                            {/* Ghost Caret */}
+                                            {ghost && isActive && (
+                                                <motion.div
+                                                    animate={{ top: ghostPos.top, left: ghostPos.left }}
+                                                    transition={{ type: "spring", stiffness: 100, damping: 20 }}
+                                                    className="absolute w-[2px] rounded-full z-[5] pointer-events-none opacity-40 flex flex-col items-center"
+                                                    style={{
+                                                        backgroundColor: activeTheme.text,
+                                                        height: language === "khmer" ? '34px' : `${fontSize * 1.1}px`,
+                                                        marginTop: language === "khmer" ? '6px' : `${fontSize * 0.25}px`,
+                                                    }}
+                                                >
+                                                    <div className="absolute bottom-full mb-1 whitespace-nowrap text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-black/40 text-white backdrop-blur-sm border border-white/10 scale-90 origin-bottom">
+                                                        {ghost.userName || "Ghost"}
+                                                    </div>
+                                                </motion.div>
+                                            )}
 
-                                        // Only pass the relevant slice of userInput to the Word component.
-                                        // This ensures only the word currently being typed re-renders.
-                                        const wordUserInput = userInput.substring(wordStart, Math.min(userInput.length, wordEnd));
-                                        const wordTargetText = targetText.substring(wordStart, wordEnd);
+                                            {/* Words Grid */}
+                                            <div className={cn("flex flex-wrap w-full", language === "khmer" ? "font-hanuman" : "")}>
+                                                {wordGroups.map((group, groupIdx) => {
+                                                    const wordStart = clusterIndexes[group[0]];
+                                                    const wordEnd = clusterIndexes[group[group.length - 1]] + clusters[group[group.length - 1]].length;
+
+                                                    // Only pass the relevant slice of userInput to the Word component.
+                                                    // This ensures only the word currently being typed re-renders.
+                                                    const wordUserInput = userInput.substring(wordStart, Math.min(userInput.length, wordEnd));
+                                                    const wordTargetText = targetText.substring(wordStart, wordEnd);
+
+                                                    return (
+                                                        <Word
+                                                            key={groupIdx}
+                                                            group={group}
+                                                            clusters={clusters}
+                                                            clusterIndexes={clusterIndexes}
+                                                            wordUserInput={wordUserInput}
+                                                            wordTargetText={wordTargetText}
+                                                            charRefs={charRefs}
+                                                            themeColors={activeTheme}
+                                                        />
+                                                    );
+                                                })}
+                                            </div>
+                                        </motion.div>
+
+                                        <input
+                                            ref={inputRef}
+                                            type="text"
+                                            value={userInput}
+                                            onChange={handleInputChange}
+                                            onFocus={() => {
+                                                setIsFocused(true);
+                                                wasTabPressedRef.current = false;
+                                            }}
+                                            onBlur={() => {
+                                                setIsFocused(false);
+                                            }}
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Tab") {
+                                                    wasTabPressedRef.current = true;
+                                                }
+                                            }}
+                                            className="absolute inset-0 w-full h-full opacity-0 outline-none cursor-default"
+                                            autoFocus
+                                            spellCheck={false}
+                                            autoComplete="off"
+                                        />
+                                    </div>
+
+                                    {/* Focus-lost overlay — now INSIDE the typing window for clipping */}
+                                    <AnimatePresence>
+                                        {!isFocused && !isFinished && !wasTabPressedRef.current && (
+                                            <motion.div
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                exit={{ opacity: 0 }}
+                                                transition={{ duration: 0.25 }}
+                                                className="absolute inset-0 z-20 flex items-center justify-center cursor-pointer rounded-lg"
+                                                onClick={() => inputRef.current?.focus()}
+                                            >
+                                                <div className="flex items-center gap-3 text-base font-normal tracking-normal" style={{ color: activeTheme.text }}>
+                                                    <svg width="14" height="14" viewBox="0 0 512 512" fill="currentColor">
+                                                        <path d="M302.189 329.126l16.297-39.757 141.6 141.6c11.31 11.31 11.31 29.65 0 40.96a28.84 28.84 0 01-20.48 8.48c-7.394 0-14.788-2.827-20.48-8.48L277.53 330.334l-39.757 16.297L134.453 0z" />
+                                                    </svg>
+                                                    Click here or press any key to focus
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+
+                                {/* Keyboard — Desktop only */}
+                                <div className="hidden md:block">
+                                    {(() => {
+                                        // Always show next key to press, updating as the user types
+                                        const remainingTarget = targetText.slice(userInput.length);
+                                        let nextKey: string | null = null;
+                                        let needsShift = false;
+
+                                        if (remainingTarget) {
+                                            if (language === "khmer") {
+                                                if (remainingTarget.startsWith(" ")) {
+                                                    nextKey = "space";
+                                                    needsShift = true;
+                                                } else {
+                                                    for (const [qKey, m] of Object.entries(KHMER_KEY_MAP)) {
+                                                        if (remainingTarget.startsWith(m.base)) {
+                                                            nextKey = qKey;
+                                                            needsShift = false;
+                                                            break;
+                                                        }
+                                                        if (remainingTarget.startsWith(m.shift)) {
+                                                            nextKey = qKey;
+                                                            needsShift = true;
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+                                            } else {
+                                                const char = remainingTarget[0];
+                                                if (char === " ") {
+                                                    nextKey = "space";
+                                                } else if (char) {
+                                                    const baseKey = ENGLISH_BASE_MAP[char] || char.toLowerCase();
+                                                    for (const row of KEYBOARD_ROWS) {
+                                                        if (row.includes(baseKey)) {
+                                                            nextKey = baseKey;
+                                                            break;
+                                                        }
+                                                    }
+                                                    needsShift = /[A-Z!@#$%^&*()_+{}|:"<>?]/.test(char);
+                                                }
+                                            }
+                                        }
 
                                         return (
-                                            <Word
-                                                key={groupIdx}
-                                                group={group}
-                                                clusters={clusters}
-                                                clusterIndexes={clusterIndexes}
-                                                wordUserInput={wordUserInput}
-                                                wordTargetText={wordTargetText}
-                                                charRefs={charRefs}
-                                                themeColors={activeTheme}
+                                            <Keyboard
+                                                activeKeys={activeKeys}
+                                                errorKey={errorKey}
+                                                language={language}
+                                                isShiftPressed={isShiftPressed}
+                                                nextKeyData={{ key: nextKey, needsShift }}
+                                                activeTheme={activeTheme}
                                             />
                                         );
-                                    })}
+                                    })()}
                                 </div>
-                            </motion.div>
 
-                            <input
-                                ref={inputRef}
-                                type="text"
-                                value={userInput}
-                                onChange={handleInputChange}
-                                onFocus={() => setIsFocused(true)}
-                                onBlur={() => setIsFocused(false)}
-                                className="absolute inset-0 w-full h-full opacity-0 outline-none cursor-default"
-                                autoFocus
-                                spellCheck={false}
-                                autoComplete="off"
-                            />
 
-                            {/* Focus-lost overlay — like monkeytype.com */}
-                            <AnimatePresence>
-                                {!isFocused && !isFinished && (
-                                    <motion.div
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                        transition={{ duration: 0.15 }}
-                                        className="absolute inset-0 z-20 flex items-center justify-center cursor-pointer backdrop-blur-[3px] rounded-lg"
-                                        onClick={() => inputRef.current?.focus()}
+                                <div className="flex flex-col items-center gap-3 sm:gap-6 mt-2 sm:mt-4">
+                                    <div className="hidden sm:flex text-xs font-bold tracking-[0.2em] uppercase gap-8" style={{ color: activeTheme.textDim }}>
+                                        <span><span className="text-[var(--mt-primary)] font-bold px-1.5 py-0.5 rounded mr-1" style={{ backgroundColor: 'var(--mt-bg-alt)' }}>Tab</span> + <span className="text-[var(--mt-primary)] font-bold px-1.5 py-0.5 rounded ml-1" style={{ backgroundColor: 'var(--mt-bg-alt)' }}>Enter</span> Restart</span>
+                                        <span><span className="text-[var(--mt-primary)] font-bold px-1.5 py-0.5 rounded mr-1" style={{ backgroundColor: 'var(--mt-bg-alt)' }}>Esc</span> Quick Reset</span>
+                                    </div>
+
+                                    <button
+                                        ref={restartRef}
+                                        onClick={() => resetTest()}
+                                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); resetTest(); } }}
+                                        className="p-5 rounded-full transition-all transform hover:rotate-180 duration-500 focus:outline-none"
+                                        style={{
+                                            color: 'var(--mt-text-dim)'
+                                        }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--mt-text)'; e.currentTarget.style.backgroundColor = 'var(--mt-bg-alt)'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--mt-text-dim)'; e.currentTarget.style.backgroundColor = 'transparent'; }}
+                                        onFocus={(e) => { e.currentTarget.style.color = 'var(--mt-primary)'; e.currentTarget.style.backgroundColor = 'var(--mt-bg-alt)'; }}
+                                        onBlur={(e) => { e.currentTarget.style.color = 'var(--mt-text-dim)'; e.currentTarget.style.backgroundColor = 'transparent'; }}
                                     >
-                                        <div className="flex items-center gap-2 text-sm font-bold tracking-wider" style={{ color: activeTheme.textDim }}>
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <path d="M15 15l-2 5L9 9l11 4-5 2z" />
-                                                <path d="M18.5 18.5L22 22" />
-                                            </svg>
-                                            Click here or start typing
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div >
-
-                        {/* Keyboard — Desktop only */}
-                        <div className="hidden md:block">
-                            {(() => {
-                                // Always show next key to press, updating as the user types
-                                const remainingTarget = targetText.slice(userInput.length);
-                                let nextKey: string | null = null;
-                                let needsShift = false;
-
-                                if (remainingTarget) {
-                                    if (language === "khmer") {
-                                        if (remainingTarget.startsWith(" ")) {
-                                            nextKey = "space";
-                                            needsShift = true;
-                                        } else {
-                                            for (const [qKey, m] of Object.entries(KHMER_KEY_MAP)) {
-                                                if (remainingTarget.startsWith(m.base)) {
-                                                    nextKey = qKey;
-                                                    needsShift = false;
-                                                    break;
-                                                }
-                                                if (remainingTarget.startsWith(m.shift)) {
-                                                    nextKey = qKey;
-                                                    needsShift = true;
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        const char = remainingTarget[0];
-                                        if (char === " ") {
-                                            nextKey = "space";
-                                        } else if (char) {
-                                            const baseKey = ENGLISH_BASE_MAP[char] || char.toLowerCase();
-                                            for (const row of KEYBOARD_ROWS) {
-                                                if (row.includes(baseKey)) {
-                                                    nextKey = baseKey;
-                                                    break;
-                                                }
-                                            }
-                                            needsShift = /[A-Z!@#$%^&*()_+{}|:"<>?]/.test(char);
-                                        }
-                                    }
-                                }
-
-                                return (
-                                    <Keyboard
-                                        activeKeys={activeKeys}
-                                        errorKey={errorKey}
-                                        language={language}
-                                        isShiftPressed={isShiftPressed}
-                                        nextKeyData={{ key: nextKey, needsShift }}
-                                        activeTheme={activeTheme}
-                                    />
-                                );
-                            })()}
-                        </div>
-
-                        <div className="flex flex-col items-center gap-3 sm:gap-6 mt-2 sm:mt-4">
-                            <div className="hidden sm:flex text-xs font-bold tracking-[0.2em] uppercase gap-8" style={{ color: activeTheme.textDim }}>
-                                <span><span className="text-[var(--mt-primary)] font-bold px-1.5 py-0.5 rounded mr-1" style={{ backgroundColor: 'var(--mt-bg-alt)' }}>Tab</span> + <span className="text-[var(--mt-primary)] font-bold px-1.5 py-0.5 rounded ml-1" style={{ backgroundColor: 'var(--mt-bg-alt)' }}>Enter</span> Restart</span>
-                                <span><span className="text-[var(--mt-primary)] font-bold px-1.5 py-0.5 rounded mr-1" style={{ backgroundColor: 'var(--mt-bg-alt)' }}>Esc</span> Quick Reset</span>
+                                        <RotateCcw className="w-8 h-8" />
+                                    </button>
+                                </div>
                             </div>
-
-                            <button
-                                ref={restartRef}
-                                onClick={() => resetTest()}
-                                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); resetTest(); } }}
-                                className="p-5 rounded-full transition-all transform hover:rotate-180 duration-500 focus:outline-none"
-                                style={{
-                                    color: 'var(--mt-text-dim)'
-                                }}
-                                onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--mt-text)'; e.currentTarget.style.backgroundColor = 'var(--mt-bg-alt)'; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--mt-text-dim)'; e.currentTarget.style.backgroundColor = 'transparent'; }}
-                                onFocus={(e) => { e.currentTarget.style.color = 'var(--mt-primary)'; e.currentTarget.style.backgroundColor = 'var(--mt-bg-alt)'; }}
-                                onBlur={(e) => { e.currentTarget.style.color = 'var(--mt-text-dim)'; e.currentTarget.style.backgroundColor = 'transparent'; }}
-                            >
-                                <RotateCcw className="w-8 h-8" />
-                            </button>
                         </div>
-                    </motion.div >
+                    </motion.div>
                 ) : (
                     <motion.div
                         key="results"
