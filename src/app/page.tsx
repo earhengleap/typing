@@ -10,6 +10,7 @@ import { incrementTestsStarted, getGhostRun, saveTypingResult } from "@/app/acti
 import { ACHIEVEMENTS } from "@/constants/achievements";
 import { saveLeaderboardResult } from "@/app/actions/leaderboard";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
 const WORD_POOL = [
     "function", "variable", "constant", "component", "interface", "generic", "promise", "async", "await", "callback",
@@ -1843,19 +1844,20 @@ export default function MonkeyTypePage() {
 
                             <motion.button
                                 ref={restartRef}
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
                                 onClick={() => resetTest()}
                                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); resetTest(); } }}
-                                className="flex items-center gap-2 px-8 py-2.5 rounded-xl font-bold text-sm tracking-widest uppercase transition-all focus:outline-none"
+                                className="group flex items-center gap-2 px-8 py-3 rounded-[4px] font-bold text-sm tracking-widest uppercase transition-all focus:outline-none"
                                 style={{ backgroundColor: activeTheme.bgAlt, color: activeTheme.textDim }}
                                 onMouseEnter={(e) => { e.currentTarget.style.color = activeTheme.text; }}
                                 onMouseLeave={(e) => { e.currentTarget.style.color = activeTheme.textDim; }}
                                 onFocus={(e) => { e.currentTarget.style.color = activeTheme.primary; e.currentTarget.style.outline = `2px solid ${activeTheme.primary}`; }}
                                 onBlur={(e) => { e.currentTarget.style.color = activeTheme.textDim; e.currentTarget.style.outline = 'none'; }}
                             >
-                                <RotateCcw className="w-3.5 h-3.5" />
-                                next test
+                                <RotateCcw className="w-3.5 h-3.5 transition-transform group-hover:rotate-45" />
+                                <span className="transition-all duration-200 group-hover:hidden">next test</span>
+                                <span className="hidden group-hover:inline transition-all duration-200">restart test</span>
                             </motion.button>
                         </div>
                     </motion.div>
@@ -1866,6 +1868,8 @@ export default function MonkeyTypePage() {
             <div className="fixed bottom-3 sm:bottom-6 right-3 sm:right-6 text-[8px] sm:text-[10px] font-bold tracking-[0.3em] uppercase opacity-20 pointer-events-none" style={{ color: activeTheme.textDim }}>
                 TypeFlow 1.0
             </div>
+
+            <Footer />
         </div >
     );
 }
