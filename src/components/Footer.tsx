@@ -87,13 +87,22 @@ export function Footer() {
                         href="https://github.com/earhengleap/typing/releases"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 group opacity-60 hover:opacity-100 transition-all duration-200"
-                        style={{ color: activeTheme.textDim }}
+                        className="flex items-center gap-2.5 group px-3 py-1.5 rounded-full transition-all duration-300 border border-transparent hover:border-current relative overflow-hidden"
+                        style={{
+                            color: activeTheme.textDim,
+                            backgroundColor: `${activeTheme.bgAlt}50`
+                        }}
                     >
-                        <Code className="w-4.5 h-4.5" />
-                        <span className="text-xs font-mono font-bold tracking-[0.1em] transition-all">
-                            v1.0.0
-                        </span>
+                        <div className="flex items-center gap-1.5 relative z-10">
+                            <span className="relative flex h-1.5 w-1.5">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: activeTheme.primary }}></span>
+                                <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ backgroundColor: activeTheme.primary }}></span>
+                            </span>
+                            <span className="text-[10px] font-mono font-black uppercase tracking-[0.15em] transition-all group-hover:text-current">
+                                v1.0.0
+                            </span>
+                        </div>
+                        <div className="absolute inset-0 bg-current opacity-0 group-hover:opacity-[0.03] transition-opacity duration-300" />
                     </Link>
                 </div>
             </div>
