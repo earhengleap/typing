@@ -6,6 +6,7 @@ import { Header } from "@/components/Header";
 import { Leaderboard } from "@/components/Leaderboard";
 import { useMonkeyTypeStore } from "@/hooks/use-monkeytype-store";
 import { THEMES } from "@/constants/themes";
+import { Footer } from "@/components/Footer";
 
 function LeaderboardPageContent() {
     const searchParams = useSearchParams();
@@ -42,6 +43,8 @@ function LeaderboardPageContent() {
             <div className="mt-8 text-[10px] font-bold tracking-[0.3em] uppercase opacity-20" style={{ color: activeTheme.textDim }}>
                 TypeFlow Leaderboards
             </div>
+
+            <Footer />
         </main>
     );
 }

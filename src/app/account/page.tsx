@@ -304,7 +304,7 @@ export default function AccountPage() {
                             { label: "Tests Started", value: userData?.testsStarted || 0, icon: PlayCircle },
                             { label: "Tests Completed", value: userData?.testsCompleted || 0, icon: CheckCircle2 },
                             { label: "Time Typing", value: timePlaying, icon: Clock },
-                            { label: "Achievements", value: (userData?.achievements as string[] || []).length, icon: Award },
+                            { label: "Achievements", value: achievements.length, icon: Award },
                         ].map((stat, i) => (
                             <div key={i} className="p-4 rounded-2xl flex items-center gap-4 border" style={{ backgroundColor: activeTheme.bgAlt + "30", borderColor: activeTheme.bgAlt }}>
                                 <div className="p-2.5 rounded-xl" style={{ backgroundColor: activeTheme.bgAlt, color: activeTheme.primary }}>
@@ -373,7 +373,7 @@ export default function AccountPage() {
 
                         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
                             {Object.values(ACHIEVEMENTS).map((achievement) => {
-                                const isUnlocked = (userData?.achievements as string[] || []).includes(achievement.id);
+                                const isUnlocked = achievements.some(a => a.achievementId === achievement.id);
                                 const AchievementIcon = achievement.icon;
                                 return (
                                     <div
