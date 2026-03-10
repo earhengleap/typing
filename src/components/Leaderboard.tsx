@@ -60,6 +60,53 @@ export function Leaderboard({
 
     const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
     const [loading, setLoading] = useState(true);
+    const [timeLeft, setTimeLeft] = useState("");
+
+    // Countdown logic
+    useEffect(() => {
+        const calculateTimeLeft = () => {
+            const now = new Date();
+            const resetType = (searchParams.get("type") as "allTime" | "weekly" | "daily") || initialType;
+
+            if (resetType === "allTime") {
+                setTimeLeft("");
+                return;
+            }
+
+            let targetDate = new Date();
+            if (resetType === "daily") {
+                targetDate.setUTCHours(24, 0, 0, 0);
+            } else if (resetType === "weekly") {
+                // Next Monday 00:00 UTC
+                const day = targetDate.getUTCDay();
+                const diff = (day === 0 ? 1 : 8 - day);
+                targetDate.setUTCDate(targetDate.getUTCDate() + diff);
+                targetDate.setUTCHours(0, 0, 0, 0);
+            }
+
+            const diffMs = targetDate.getTime() - now.getTime();
+            if (diffMs <= 0) {
+                setTimeLeft("Resetting...");
+                return;
+            }
+
+            const hours = Math.floor((diffMs / (1000 * 60 * 60)));
+            const minutes = Math.floor((diffMs / (1000 * 60)) % 60);
+            const seconds = Math.floor((diffMs / 1000) % 60);
+
+            if (hours >= 24) {
+                const days = Math.floor(hours / 24);
+                const remainingHours = hours % 24;
+                setTimeLeft(`${days}d ${String(remainingHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`);
+            } else {
+                setTimeLeft(`${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`);
+            }
+        };
+
+        const timer = setInterval(calculateTimeLeft, 1000);
+        calculateTimeLeft();
+        return () => clearInterval(timer);
+    }, [initialType, searchParams]);
 
     // Sync state with initial props or URL
     const activeTab = (searchParams.get("type") as "allTime" | "weekly" | "daily") || initialType;
@@ -138,6 +185,14 @@ export function Leaderboard({
             <div className="flex flex-1 overflow-hidden min-h-[600px]">
                 {/* Sidebar */}
                 <div className="w-20 md:w-64 border-r border-white/5 p-4 flex flex-col gap-8 overflow-y-auto custom-scrollbar">
+                    {/* Countdown Timer */}
+                    {timeLeft && (
+                        <div className="flex flex-col gap-2 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                            <span className="text-[10px] uppercase tracking-[0.2em] font-black opacity-30">Reset In</span>
+                            <span className="text-xl font-mono font-black" style={{ color: theme.primary }}>{timeLeft}</span>
+                        </div>
+                    )}
+
                     <div className="space-y-4">
                         <h3 className="hidden md:block text-[10px] uppercase tracking-[0.2em] font-black opacity-20 px-4">Language</h3>
                         <div className="flex flex-col gap-1">
