@@ -92,10 +92,19 @@ export function Footer() {
                     >
                         <Code className="w-4.5 h-4.5" />
                         <span className="text-xs font-mono font-bold tracking-[0.1em] transition-all">
-                            v0.1.0
+                            v1.0.0
                         </span>
                     </Link>
                 </div>
+            </div>
+
+            <div className="mt-8 flex flex-col md:flex-row items-center justify-between gap-4 border-t pt-8" style={{ borderColor: `${activeTheme.primary}10` }}>
+                <p className="text-[10px] font-mono uppercase tracking-widest opacity-40 hover:opacity-100 transition-opacity duration-300" style={{ color: activeTheme.textDim }}>
+                    &copy; 2026 TypeFlow. All rights reserved.
+                </p>
+                <p className="text-[10px] font-mono lowercase opacity-40 hover:opacity-100 transition-opacity duration-300" style={{ color: activeTheme.textDim }}>
+                    Built with passion for the typing community.
+                </p>
             </div>
 
             <style jsx>{`
