@@ -403,7 +403,7 @@ export default function AccountPage() {
                     </div>
 
                     <div className="p-6 rounded-[2rem] border overflow-hidden theme-transition flex flex-col gap-4" style={{ backgroundColor: activeTheme.bgAlt + "15", borderColor: activeTheme.bgAlt }}>
-                        <div className="flex items-start gap-4 overflow-x-auto scrollbar-hide pb-2 pt-6">
+                        <div className="flex items-start gap-4 overflow-x-auto scrollbar-hide pb-2 pt-16">
                             {/* Day Labels */}
                             <div className="flex flex-col gap-1.5 pt-[1px] shrink-0">
                                 {["", "Mon", "", "Wed", "", "Fri", ""].map((day, i) => (
