@@ -13,7 +13,8 @@ function LeaderboardPageContent() {
     const activeTheme = THEMES[themeName] || THEMES.codex;
 
     const type = (searchParams.get("type") as "allTime" | "weekly" | "daily") || "allTime";
-    const mode = (searchParams.get("mode2") as "15" | "60") || "15";
+    const config = searchParams.get("config") || "15";
+    const mode = (searchParams.get("mode") as "time" | "words") || "time";
     const lang = (searchParams.get("lang") as "english" | "khmer") || "english";
 
     return (
@@ -32,9 +33,9 @@ function LeaderboardPageContent() {
                     theme={activeTheme}
                     isModal={false}
                     initialType={type}
-                    initialMode="time"
-                    initialConfig={mode}
-                    initialLanguage={lang}
+                    initialMode={mode}
+                    initialConfig={config}
+                    initialLanguage={lang === "khmer" ? "khmer" : "english"}
                 />
             </div>
 
