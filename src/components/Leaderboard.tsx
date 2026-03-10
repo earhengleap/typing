@@ -68,13 +68,11 @@ export function Leaderboard({
             const now = new Date();
             const resetType = (searchParams.get("type") as "allTime" | "weekly" | "daily") || initialType;
 
-            if (resetType === "allTime") {
-                setTimeLeft("");
-                return;
-            }
-
             let targetDate = new Date();
-            if (resetType === "daily") {
+            if (resetType === "allTime") {
+                // For allTime, show a recurring 1-hour sync countdown to feel "live"
+                targetDate.setUTCHours(now.getUTCHours() + 1, 0, 0, 0);
+            } else if (resetType === "daily") {
                 targetDate.setUTCHours(24, 0, 0, 0);
             } else if (resetType === "weekly") {
                 // Next Monday 00:00 UTC
@@ -185,14 +183,6 @@ export function Leaderboard({
             <div className="flex flex-1 overflow-hidden min-h-[600px]">
                 {/* Sidebar */}
                 <div className="w-20 md:w-64 border-r border-white/5 p-4 flex flex-col gap-8 overflow-y-auto custom-scrollbar">
-                    {/* Countdown Timer */}
-                    {timeLeft && (
-                        <div className="flex flex-col gap-2 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
-                            <span className="text-[10px] uppercase tracking-[0.2em] font-black opacity-30">Reset In</span>
-                            <span className="text-xl font-mono font-black" style={{ color: theme.primary }}>{timeLeft}</span>
-                        </div>
-                    )}
-
                     <div className="space-y-4">
                         <h3 className="hidden md:block text-[10px] uppercase tracking-[0.2em] font-black opacity-20 px-4">Language</h3>
                         <div className="flex flex-col gap-1">
@@ -429,8 +419,16 @@ export function Leaderboard({
                             </motion.tbody>
                         </table>
                     </div>
-                    <div className="px-8 py-4 bg-white/5 text-[10px] uppercase font-black tracking-[0.2em] opacity-20 text-center">
-                        Real-time rankings powered by Upstash Redis
+                    <div className="px-8 py-4 bg-white/5 flex items-center justify-between">
+                        <span className="text-[10px] uppercase font-black tracking-[0.2em] opacity-20">
+                            Real-time rankings powered by Upstash Redis
+                        </span>
+                        {timeLeft && (
+                            <div className="flex items-center gap-2 text-[10px] uppercase font-bold tracking-[0.1em] opacity-40" style={{ color: theme.textDim }}>
+                                <span>Next update in</span>
+                                <span className="font-mono text-xs" style={{ color: theme.primary }}>{timeLeft}</span>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
