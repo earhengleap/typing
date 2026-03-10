@@ -259,14 +259,14 @@ export default function AccountPage() {
                         <div className="flex flex-col gap-1">
                             <h2 className="text-4xl font-black tracking-tight" style={{ color: activeTheme.text }}>{session?.user?.name}</h2>
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-medium" style={{ color: activeTheme.textDim }}>
-                                <div className="flex items-center gap-1.5"><Calendar size={14} /> Joined {joinDate}</div>
+                                <div className="flex items-center gap-1.5 opacity-80"><Calendar size={14} /> Joined {joinDate}</div>
                                 <div className="flex items-center gap-1.5" style={{ color: activeTheme.primary }}><Zap size={14} fill="currentColor" /> {userData?.streak || 0} day streak</div>
                             </div>
                         </div>
 
                         {/* XP Progress Bar */}
                         <div className="flex flex-col gap-1.5 max-w-xs group/xp">
-                            <div className="flex justify-between items-end text-[10px] font-bold uppercase tracking-widest opacity-50" style={{ color: activeTheme.textDim }}>
+                            <div className="flex justify-between items-end text-[10px] font-bold uppercase tracking-widest opacity-70" style={{ color: activeTheme.textDim }}>
                                 <span>Level {userData?.level || 1}</span>
                                 <span>{xpProgress.percent}%</span>
                             </div>
@@ -280,7 +280,7 @@ export default function AccountPage() {
                                 />
                                 <div className="absolute inset-0 bg-white/5 opacity-0 group-hover/xp:opacity-100 transition-opacity" />
                             </div>
-                            <div className="text-[9px] font-bold opacity-0 group-hover/xp:opacity-40 transition-all transform translate-y-1 group-hover/xp:translate-y-0" style={{ color: activeTheme.textDim }}>
+                            <div className="text-[9px] font-bold opacity-50 group-hover/xp:opacity-80 transition-all transform translate-y-1 group-hover/xp:translate-y-0" style={{ color: activeTheme.textDim }}>
                                 {xpProgress.remaining} XP until level {(userData?.level || 1) + 1}
                             </div>
                         </div>
@@ -359,7 +359,7 @@ export default function AccountPage() {
                                     <stat.icon size={18} />
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="text-[10px] uppercase font-bold tracking-wider opacity-40" style={{ color: activeTheme.textDim }}>{stat.label}</span>
+                                    <span className="text-[10px] uppercase font-bold tracking-wider opacity-60" style={{ color: activeTheme.textDim }}>{stat.label}</span>
                                     <span className="text-xl font-black" style={{ color: activeTheme.text }}>{stat.value}</span>
                                 </div>
                             </div>
@@ -407,7 +407,7 @@ export default function AccountPage() {
                             {/* Day Labels */}
                             <div className="flex flex-col gap-1.5 pt-[1px] shrink-0">
                                 {["", "Mon", "", "Wed", "", "Fri", ""].map((day, i) => (
-                                    <div key={i} className="h-[14px] flex items-center text-[9px] font-bold uppercase text-right w-6 opacity-30" style={{ color: activeTheme.textDim }}>
+                                    <div key={i} className="h-[14px] flex items-center text-[9px] font-bold uppercase text-right w-6 opacity-60" style={{ color: activeTheme.textDim }}>
                                         {day}
                                     </div>
                                 ))}
@@ -423,7 +423,7 @@ export default function AccountPage() {
 
                                             if (!prevWeekDate || currentWeekDate.getMonth() !== prevWeekDate.getMonth()) {
                                                 return (
-                                                    <span className="absolute -top-6 left-0 text-[9px] font-bold uppercase opacity-40 whitespace-nowrap tracking-wider" style={{ color: activeTheme.textDim }}>
+                                                    <span className="absolute -top-6 left-0 text-[9px] font-bold uppercase opacity-70 whitespace-nowrap tracking-wider" style={{ color: activeTheme.textDim }}>
                                                         {currentWeekDate.toLocaleDateString("en-US", { month: "short" })}
                                                     </span>
                                                 );
@@ -485,6 +485,7 @@ export default function AccountPage() {
                                             <AchievementIcon size={24} />
                                         </div>
                                         <span className="text-[10px] font-black text-center line-clamp-1" style={{ color: isUnlocked ? activeTheme.text : activeTheme.textDim }}>{achievement.name}</span>
+                                        {!isUnlocked && <span className="text-[8px] font-bold uppercase opacity-40" style={{ color: activeTheme.textDim }}>Locked</span>}
 
                                         {/* Achievement Tooltip */}
                                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 p-3 rounded-xl bg-[#000] text-white text-[10px] font-bold whitespace-nowrap opacity-0 group-hover/ach:opacity-100 pointer-events-none transition-all scale-95 group-hover/ach:scale-100 z-20 shadow-2xl border border-white/10 w-48 text-center leading-relaxed">
@@ -511,12 +512,12 @@ export default function AccountPage() {
                             {configBests.map((c, i) => (
                                 <div key={i} className="p-5 rounded-2xl border flex items-center justify-between group transition-all hover:border-[var(--mt-primary-30)]" style={{ backgroundColor: activeTheme.bgAlt + "20", borderColor: activeTheme.bgAlt }}>
                                     <div className="flex flex-col">
-                                        <span className="text-[10px] font-bold opacity-40 uppercase tracking-wider" style={{ color: activeTheme.textDim }}>{c.language} {c.mode}</span>
+                                        <span className="text-[10px] font-bold opacity-60 uppercase tracking-wider" style={{ color: activeTheme.textDim }}>{c.language} {c.mode}</span>
                                         <span className="text-sm font-black" style={{ color: activeTheme.text }}>{c.config} {c.mode === 'time' ? 's' : 'words'}</span>
                                     </div>
                                     <div className="flex flex-col items-end">
                                         <span className="text-xl font-black group-hover:scale-110 transition-transform" style={{ color: c.best === '-' ? activeTheme.textDim : activeTheme.primary }}>{c.best}</span>
-                                        {c.best !== '-' && <span className="text-[10px] font-bold opacity-30 uppercase" style={{ color: activeTheme.textDim }}>wpm</span>}
+                                        {c.best !== '-' && <span className="text-[10px] font-bold opacity-50 uppercase" style={{ color: activeTheme.textDim }}>wpm</span>}
                                     </div>
                                 </div>
                             ))}
@@ -526,7 +527,7 @@ export default function AccountPage() {
                     {/* All-time Leaderboards (Mock for now) */}
                     <section className="flex flex-col gap-6">
                         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest" style={{ color: activeTheme.textDim }}>
-                            <Trophy size={14} className="opacity-50" />
+                            <Trophy size={14} className="opacity-70" />
                             Recent Global Standings
                         </div>
 
@@ -535,7 +536,7 @@ export default function AccountPage() {
                                 <div key={t} className="p-6 rounded-3xl border flex flex-col gap-4" style={{ backgroundColor: activeTheme.bgAlt + "20", borderColor: activeTheme.bgAlt } as React.CSSProperties}>
                                     <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: activeTheme.bgAlt }}>
                                         <span className="text-xl font-black" style={{ color: activeTheme.text }}>{t} seconds</span>
-                                        <span className="text-xs font-bold opacity-50 uppercase tracking-widest" style={{ color: activeTheme.textDim }}>Global Rank #---</span>
+                                        <span className="text-xs font-bold opacity-70 uppercase tracking-widest" style={{ color: activeTheme.textDim }}>Global Rank #---</span>
                                     </div>
                                     <div className="flex flex-col gap-2">
                                         <div className="flex items-center justify-between text-xs font-bold opacity-40 uppercase tracking-widest" style={{ color: activeTheme.textDim }}>
