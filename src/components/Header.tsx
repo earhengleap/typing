@@ -5,9 +5,11 @@ import { motion } from "framer-motion";
 import { Type, Crown, Settings, Keyboard as KeyboardIcon, Info, Bell } from "lucide-react";
 import { UserMenu } from "@/components/UserMenu";
 import { SettingsModal } from "@/components/SettingsModal";
-import { useState } from "react";
+import { NotificationsPanel } from "@/components/NotificationsPanel";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { THEMES } from "@/constants/themes";
+import { getNotifications } from "@/app/actions/notifications";
 
 interface HeaderProps {
     activeTheme: typeof THEMES.codex;
@@ -15,6 +17,21 @@ interface HeaderProps {
 
 export function Header({ activeTheme }: HeaderProps) {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+    const [hasUnread, setHasUnread] = useState(false);
+
+    useEffect(() => {
+        const checkUnread = async () => {
+            const res = await getNotifications();
+            const totalUnread = [...res.inbox, ...res.announcements, ...res.notifications].some(n => n.read === 0);
+            setHasUnread(totalUnread);
+        };
+        checkUnread();
+        
+        // Refresh every 30 seconds for "real-time" feel
+        const interval = setInterval(checkUnread, 30000);
+        return () => clearInterval(interval);
+    }, []);
 
     return (
         <>
@@ -89,23 +106,36 @@ export function Header({ activeTheme }: HeaderProps) {
 
                     {/* Right Group: Notifications + Profile */}
                     <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-                        <Link href="/notifications">
-                            <motion.button
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="p-1.5 sm:p-2 rounded-xl transition-all hover:bg-white/5 group relative cursor-pointer"
-                                type="button"
-                                title="Notifications"
-                                style={{ color: activeTheme.textDim }}
-                            >
-                                <Bell className="w-5 h-5 sm:w-6 sm:h-6 transition-colors group-hover:text-current hover:brightness-125" />
-                            </motion.button>
-                        </Link>
+                        <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setIsNotificationsOpen(true)}
+                            className="p-1.5 sm:p-2 rounded-xl transition-all hover:bg-white/5 group relative cursor-pointer"
+                            type="button"
+                            title="Notifications"
+                            style={{ color: activeTheme.textDim }}
+                        >
+                            <Bell className="w-5 h-5 sm:w-6 sm:h-6 transition-colors group-hover:text-current hover:brightness-125" />
+                            {hasUnread && (
+                                <span 
+                                    className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full border border-black/20 animate-pulse" 
+                                    style={{ backgroundColor: activeTheme.primary }}
+                                />
+                            )}
+                        </motion.button>
                         
                         <UserMenu />
                     </div>
                 </div>
                 <SettingsModal isOpen={isSettingsOpen} onCloseAction={() => setIsSettingsOpen(false)} />
+                <NotificationsPanel 
+                    isOpen={isNotificationsOpen} 
+                    onClose={() => {
+                        setIsNotificationsOpen(false);
+                        setHasUnread(false);
+                    }} 
+                    activeTheme={activeTheme} 
+                />
             </header>
         </>
     );

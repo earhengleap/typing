@@ -21,9 +21,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 token.id = user.id;
                 // @ts-ignore
                 token.level = user.level as number;
+                // @ts-ignore
+                token.role = user.role as string;
             }
-            if (trigger === "update" && session?.level) {
-                token.level = session.level;
+            if (trigger === "update" && (session?.level || session?.role)) {
+                if (session.level) token.level = session.level;
+                if (session.role) token.role = session.role;
             }
             return token;
         },
@@ -32,6 +35,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 session.user.id = token.id as string;
                 // @ts-ignore
                 session.user.level = token.level as number;
+                // @ts-ignore
+                session.user.role = token.role as string;
             }
             return session;
         },

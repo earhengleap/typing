@@ -24,6 +24,7 @@ export const users = pgTable("user", {
         appearance: { theme: "codex", font: "inter", fontSize: 16 },
         gameplay: { showWpm: true, showAccuracy: true, sound: true },
     }).notNull(),
+    role: varchar("role", { length: 20 }).default("user").notNull(),
 });
 
 export const userAchievements = pgTable("user_achievement", {
@@ -120,3 +121,17 @@ export const typingResults = pgTable("typing_result", {
         userBestIdx: index("user_best_idx").on(table.userId, table.mode, table.config, table.language, table.wpm),
     };
 });
+
+export const notifications = pgTable("notification", {
+    id: text("id")
+        .primaryKey()
+        .$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+        .references(() => users.id, { onDelete: "cascade" }), // Nullable for global announcements
+    type: varchar("type", { length: 50 }).notNull(), // 'inbox', 'announcement', 'notification'
+    title: text("title").notNull(),
+    message: text("message").notNull(),
+    read: integer("read").default(0).notNull(), // 0 = unread, 1 = read
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+});
+
