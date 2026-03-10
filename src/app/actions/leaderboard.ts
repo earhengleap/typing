@@ -3,10 +3,25 @@
 import { redis } from "@/db/redis";
 import { auth } from "@/auth";
 
-const getLeaderboardKeys = (type: string, gameMode: string, config: string, language: string) => ({
-    wpm: `typing_leaderboard_${language}_${gameMode}_${config}_${type}_wpm`,
-    metadata: `typing_leaderboard_${language}_${gameMode}_${config}_${type}_metadata`
-});
+const getLeaderboardKeys = (type: string, gameMode: string, config: string, language: string) => {
+    let timeSuffix = "";
+    const now = new Date();
+
+    if (type === "daily") {
+        timeSuffix = `_${now.getUTCFullYear()}-${now.getUTCMonth()}-${now.getUTCDate()}`;
+    } else if (type === "weekly") {
+        // Simple ISO week-like suffix
+        const startOfYear = new Date(now.getUTCFullYear(), 0, 1);
+        const pastDaysOfYear = (now.getTime() - startOfYear.getTime()) / 86400000;
+        const weekNum = Math.ceil((pastDaysOfYear + startOfYear.getDay() + 1) / 7);
+        timeSuffix = `_${now.getUTCFullYear()}_w${weekNum}`;
+    }
+
+    return {
+        wpm: `typing_leaderboard_${language}_${gameMode}_${config}_${type}${timeSuffix}_wpm`,
+        metadata: `typing_leaderboard_${language}_${gameMode}_${config}_${type}${timeSuffix}_metadata`
+    };
+};
 
 export async function saveLeaderboardResult(
     wpm: number,
