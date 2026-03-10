@@ -55,6 +55,17 @@ export default function AccountPage() {
     const [isEditingKeyboard, setIsEditingKeyboard] = useState(false);
     const [keyboardValue, setKeyboardValue] = useState("");
     const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
+    const [heatmapFilter, setHeatmapFilter] = useState<string>("12m");
+
+    const availableYears = useMemo(() => {
+        const startYear = userData?.joinedAt ? new Date(userData.joinedAt).getFullYear() : new Date().getFullYear();
+        const currentYear = new Date().getFullYear();
+        const yearList = [];
+        for (let y = currentYear; y >= startYear; y--) {
+            yearList.push(y.toString());
+        }
+        return yearList;
+    }, [userData?.joinedAt]);
 
     useEffect(() => {
         if (session?.user?.id) {
@@ -129,17 +140,54 @@ export default function AccountPage() {
     }, [userData]);
 
     const heatmapData = useMemo(() => {
-        const days = 14 * 7; // 14 weeks
-        const data = Array.from({ length: days }, (_, i) => {
-            const date = new Date();
-            date.setDate(date.getDate() - (days - 1 - i));
+        let startDate: Date;
+        let endDate: Date = new Date();
+        endDate.setHours(23, 59, 59, 999);
+
+        if (heatmapFilter === "3m") {
+            startDate = new Date();
+            startDate.setMonth(startDate.getMonth() - 3);
+        } else if (heatmapFilter === "6m") {
+            startDate = new Date();
+            startDate.setMonth(startDate.getMonth() - 6);
+        } else if (heatmapFilter === "12m") {
+            startDate = new Date();
+            startDate.setFullYear(startDate.getFullYear() - 1);
+        } else if (heatmapFilter === "all") {
+            startDate = userData?.joinedAt ? new Date(userData.joinedAt) : new Date();
+        } else {
+            // It's a year
+            const year = parseInt(heatmapFilter);
+            startDate = new Date(year, 0, 1);
+            endDate = new Date(year, 11, 31, 23, 59, 59, 999);
+            const now = new Date();
+            if (year === now.getFullYear()) {
+                endDate = now;
+            }
+        }
+
+        // Adjust to start of week (Sunday)
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        start.setDate(start.getDate() - start.getDay());
+
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+
+        const diffTime = Math.max(0, end.getTime() - start.getTime());
+        const totalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const adjustedTotalDays = Math.max(14 * 7, Math.ceil(totalDays / 7) * 7);
+
+        const data = Array.from({ length: adjustedTotalDays }, (_, i) => {
+            const date = new Date(start);
+            date.setDate(date.getDate() + i);
             const filteredHistory = history.filter(h => new Date(h.date).toDateString() === date.toDateString());
             const count = filteredHistory.length;
             const totalDuration = filteredHistory.reduce((acc, h) => acc + (h.duration || 0), 0);
             return { date, count, duration: totalDuration };
         });
         return data;
-    }, [history]);
+    }, [history, heatmapFilter, userData?.joinedAt]);
 
     // Stats by config
     const configBests = useMemo(() => {
@@ -321,44 +369,91 @@ export default function AccountPage() {
 
                 {/* Heatmap Section */}
                 <section className="flex flex-col gap-4">
-                    <div className="flex items-center justify-between px-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2">
                         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest" style={{ color: activeTheme.textDim }}>
                             <Calendar size={14} className="opacity-50" />
                             Activity
                         </div>
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: activeTheme.textDim }}>
-                            Less <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: activeTheme.bgAlt }} />
-                            <div className="w-2.5 h-2.5 rounded-sm opacity-40" style={{ backgroundColor: activeTheme.primary }} />
-                            <div className="w-2.5 h-2.5 rounded-sm opacity-70" style={{ backgroundColor: activeTheme.primary }} />
-                            <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: activeTheme.primary }} /> More
+
+                        <div className="flex items-center gap-4">
+                            {/* Filter bar */}
+                            <div className="flex bg-black/20 p-1 rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                                {["3m", "6m", "12m", "all", ...availableYears].map((f) => (
+                                    <button
+                                        key={f}
+                                        onClick={() => setHeatmapFilter(f)}
+                                        className="px-3 py-1 rounded-md transition-all"
+                                        style={{
+                                            backgroundColor: heatmapFilter === f ? activeTheme.primary : "transparent",
+                                            color: heatmapFilter === f ? activeTheme.bg : activeTheme.textDim
+                                        }}
+                                    >
+                                        {f}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: activeTheme.textDim }}>
+                                Less <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: activeTheme.bgAlt }} />
+                                <div className="w-2.5 h-2.5 rounded-sm opacity-40" style={{ backgroundColor: activeTheme.primary }} />
+                                <div className="w-2.5 h-2.5 rounded-sm opacity-70" style={{ backgroundColor: activeTheme.primary }} />
+                                <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: activeTheme.primary }} /> More
+                            </div>
                         </div>
                     </div>
 
-                    <div className="p-8 rounded-[2rem] border overflow-x-auto scrollbar-hide theme-transition" style={{ backgroundColor: activeTheme.bgAlt + "15", borderColor: activeTheme.bgAlt }}>
-                        <div className="flex gap-2 min-w-max justify-center">
-                            {Array.from({ length: 14 }).map((_, weekIdx) => (
-                                <div key={weekIdx} className="flex flex-col gap-2">
-                                    {Array.from({ length: 7 }).map((_, dayIdx) => {
-                                        const data = heatmapData[weekIdx * 7 + dayIdx];
-                                        const intensity = data.count === 0 ? 0 : data.count > 5 ? 4 : data.count > 3 ? 3 : data.count > 1 ? 2 : 1;
-                                        return (
-                                            <div
-                                                key={dayIdx}
-                                                className="w-4 h-4 rounded-sm transition-all hover:scale-125 cursor-help relative group/cell"
-                                                style={{
-                                                    backgroundColor: intensity === 0 ? activeTheme.bgAlt : activeTheme.primary,
-                                                    opacity: intensity === 0 ? 0.3 : intensity === 1 ? 0.4 : intensity === 2 ? 0.6 : intensity === 3 ? 0.8 : 1
-                                                }}
-                                            >
-                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-3 rounded-xl bg-[#000] text-white text-[10px] font-bold whitespace-nowrap opacity-0 group-hover/cell:opacity-100 pointer-events-none transition-all scale-95 group-hover/cell:scale-100 z-10 shadow-2xl border border-white/10 flex flex-col items-center gap-1">
-                                                    <span style={{ color: activeTheme.primary }}>{data.count} tests {data.count > 0 && `• ${data.duration}s typing`}</span>
-                                                    <span className="opacity-40">{data.date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                    <div className="p-6 rounded-[2rem] border overflow-hidden theme-transition flex flex-col gap-4" style={{ backgroundColor: activeTheme.bgAlt + "15", borderColor: activeTheme.bgAlt }}>
+                        <div className="flex items-start gap-4 overflow-x-auto scrollbar-hide pb-2 pt-6">
+                            {/* Day Labels */}
+                            <div className="flex flex-col gap-2 pt-[1px] shrink-0">
+                                {["", "Mon", "", "Wed", "", "Fri", ""].map((day, i) => (
+                                    <div key={i} className="h-4 flex items-center text-[9px] font-bold uppercase text-right w-6 opacity-30" style={{ color: activeTheme.textDim }}>
+                                        {day}
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="flex gap-2 min-w-max flex-1">
+                                {Array.from({ length: Math.ceil(heatmapData.length / 7) }).map((_, weekIdx) => (
+                                    <div key={weekIdx} className="flex flex-col gap-2 relative">
+                                        {/* Dynamic Month label */}
+                                        {(() => {
+                                            const currentWeekDate = heatmapData[weekIdx * 7].date;
+                                            const prevWeekDate = weekIdx > 0 ? heatmapData[(weekIdx - 1) * 7].date : null;
+
+                                            if (!prevWeekDate || currentWeekDate.getMonth() !== prevWeekDate.getMonth()) {
+                                                return (
+                                                    <span className="absolute -top-6 left-0 text-[9px] font-bold uppercase opacity-40 whitespace-nowrap tracking-wider" style={{ color: activeTheme.textDim }}>
+                                                        {currentWeekDate.toLocaleDateString("en-US", { month: "short" })}
+                                                    </span>
+                                                );
+                                            }
+                                            return null;
+                                        })()}
+
+                                        {Array.from({ length: 7 }).map((_, dayIdx) => {
+                                            const data = heatmapData[weekIdx * 7 + dayIdx];
+                                            if (!data) return null;
+                                            const intensity = data.count === 0 ? 0 : data.count > 5 ? 4 : data.count > 3 ? 3 : data.count > 1 ? 2 : 1;
+                                            return (
+                                                <div
+                                                    key={dayIdx}
+                                                    className="w-4 h-4 rounded-sm transition-all hover:scale-125 cursor-help relative group/cell"
+                                                    style={{
+                                                        backgroundColor: intensity === 0 ? activeTheme.bgAlt : activeTheme.primary,
+                                                        opacity: intensity === 0 ? 0.3 : intensity === 1 ? 0.4 : intensity === 2 ? 0.6 : intensity === 3 ? 0.8 : 1
+                                                    }}
+                                                >
+                                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-3 rounded-xl bg-[#000] text-white text-[10px] font-bold whitespace-nowrap opacity-0 group-hover/cell:opacity-100 pointer-events-none transition-all scale-95 group-hover/cell:scale-100 z-10 shadow-2xl border border-white/10 flex flex-col items-center gap-1">
+                                                        <span style={{ color: activeTheme.primary }}>{data.count} tests {data.count > 0 && `• ${data.duration}s typing`}</span>
+                                                        <span className="opacity-40">{data.date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            ))}
+                                            );
+                                        })}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </section>
