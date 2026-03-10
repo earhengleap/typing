@@ -27,8 +27,8 @@
     --content-px: 1.5rem;
     --typing-font-size: clamp(1.25rem, 2.5vw, 1.75rem);
     --typing-line-height: clamp(2.25rem, 4vw, 3rem);
-    --khmer-font-size: clamp(1.5rem, 3vw, 2rem);
-    --khmer-line-height: clamp(2.75rem, 5vw, 3.875rem);
+    --khmer-font-size: clamp(1.5rem, 3vw, 2.1rem);
+    --khmer-line-height: clamp(2.75rem, 5vw, 4rem);
   }
 
   /* Tablet */
@@ -41,11 +41,11 @@
   /* Mobile */
   @media (max-width: 640px) {
     :root {
-      --content-px: 0.75rem;
-      --typing-font-size: clamp(1.1rem, 4.5vw, 1.35rem);
-      --typing-line-height: clamp(2rem, 6.5vw, 2.5rem);
-      --khmer-font-size: clamp(1.25rem, 5vw, 1.6rem);
-      --khmer-line-height: clamp(2.25rem, 8vw, 3rem);
+      --content-px: 1rem;
+      --typing-font-size: clamp(1rem, 5vw, 1.25rem);
+      --typing-line-height: clamp(1.75rem, 8vw, 2.25rem);
+      --khmer-font-size: clamp(1.1rem, 6vw, 1.4rem);
+      --khmer-line-height: clamp(2rem, 10vw, 2.5rem);
     }
   }
 

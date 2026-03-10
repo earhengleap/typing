@@ -158,7 +158,7 @@ export function Leaderboard({
         <div
             className={cn(
                 "relative bg-[#2c2e31] overflow-hidden flex flex-col transition-all duration-300",
-                isModal ? "w-full h-full max-w-6xl md:h-auto md:max-h-[90vh] rounded-none md:rounded-3xl shadow-2xl border border-white/5" : "w-full max-w-5xl mx-auto rounded-3xl border border-white/5"
+                isModal ? "w-full h-full max-w-6xl md:h-auto md:max-h-[85vh] rounded-none md:rounded-3xl shadow-2xl border border-white/5" : "w-full max-w-5xl mx-auto rounded-none md:rounded-3xl border border-white/5"
             )}
             style={{ backgroundColor: theme.bg }}
             onClick={(e) => e.stopPropagation()}
@@ -189,7 +189,7 @@ export function Leaderboard({
 
             <div className="flex flex-1 overflow-hidden min-h-[600px]">
                 {/* Sidebar */}
-                <div className="w-20 md:w-64 border-r border-white/5 p-4 flex flex-col gap-8 overflow-y-auto custom-scrollbar">
+                <div className="w-14 sm:w-20 md:w-64 border-r border-white/5 p-2 md:p-4 flex flex-col gap-6 md:gap-8 overflow-y-auto custom-scrollbar">
                     <div className="space-y-4">
                         <h3 className="hidden md:block text-[10px] uppercase tracking-[0.2em] font-black opacity-20 px-4">Language</h3>
                         <div className="flex flex-col gap-1">
@@ -201,7 +201,7 @@ export function Leaderboard({
                                     key={lang.id}
                                     onClick={() => updateQueryParams(activeTab, activeMode, activeConfig, lang.id)}
                                     className={cn(
-                                        "flex items-center gap-3 p-3 rounded-xl transition-all",
+                                        "flex items-center justify-center md:justify-start gap-3 p-2 md:p-3 rounded-xl transition-all",
                                         activeLanguage === lang.id ? "bg-[#e2b714]" : "hover:bg-white/5"
                                     )}
                                     style={{
@@ -306,8 +306,8 @@ export function Leaderboard({
                                     <th className="px-4 py-2">name</th>
                                     <th className="px-4 py-2 text-right">wpm</th>
                                     <th className="px-4 py-2 text-right">acc</th>
-                                    <th className="px-4 py-2 text-right">missed</th>
-                                    <th className="px-4 py-2 text-right">consistency</th>
+                                    <th className="px-4 py-2 text-right hidden sm:table-cell">missed</th>
+                                    <th className="px-4 py-2 text-right hidden sm:table-cell">consistency</th>
                                     <th className="px-4 py-2 text-right md:table-cell hidden">raw</th>
                                     <th className="px-4 py-2 text-right md:table-cell hidden">date</th>
                                 </tr>
@@ -394,12 +394,12 @@ export function Leaderboard({
                                                         {(entry.accuracy ?? 0).toFixed(0)}%
                                                     </span>
                                                 </td>
-                                                <td className="px-4 py-3 text-right">
+                                                <td className="px-4 py-3 text-right hidden sm:table-cell">
                                                     <span className="opacity-30 font-mono text-xs tabular-nums">
                                                         {entry.missedChars ?? 0}
                                                     </span>
                                                 </td>
-                                                <td className="px-4 py-3 text-right">
+                                                <td className="px-4 py-3 text-right hidden sm:table-cell">
                                                     <span className="opacity-50 font-mono text-xs tabular-nums">
                                                         {entry.consistency ? `${entry.consistency.toFixed(0)}%` : '-'}
                                                     </span>

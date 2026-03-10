@@ -48,7 +48,7 @@ export function SettingsModal({ isOpen, onCloseAction }: { isOpen: boolean; onCl
                     initial={{ scale: 0.9, opacity: 0, y: 20 }}
                     animate={{ scale: 1, opacity: 1, y: 0 }}
                     exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                    className="w-full max-w-lg rounded-[2.5rem] border shadow-2xl overflow-hidden"
+                    className="w-full max-w-lg md:rounded-[2.5rem] border shadow-2xl overflow-hidden h-full md:h-auto flex flex-col md:block"
                     style={{ backgroundColor: activeTheme.bg, borderColor: activeTheme.bgAlt }}
                     onClick={(e) => e.stopPropagation()}
                 >
@@ -68,7 +68,7 @@ export function SettingsModal({ isOpen, onCloseAction }: { isOpen: boolean; onCl
                     </div>
 
                     {/* Content */}
-                    <div className="p-8 flex flex-col gap-8 max-h-[70vh] overflow-y-auto scrollbar-hide">
+                    <div className="p-4 md:p-8 flex flex-col gap-6 md:gap-8 flex-1 md:max-h-[70vh] overflow-y-auto scrollbar-hide">
 
                         {/* Gameplay Section */}
                         <div className="flex flex-col gap-4">

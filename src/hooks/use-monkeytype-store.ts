@@ -59,6 +59,8 @@ interface MonkeyTypeState {
     setConfig: (config: GameConfig) => void;
     setLanguage: (language: Language) => void;
     setTheme: (theme: Theme) => void;
+    favoriteThemes: Theme[];
+    toggleFavoriteTheme: (theme: Theme) => void;
 
     // Live State
     isActive: boolean;
@@ -84,8 +86,8 @@ interface MonkeyTypeState {
     fontFamily: string;
     soundType: string;
     soundVolume: number;
-    soundOnError: boolean;
-    playTimeWarning: boolean;
+    soundOnError: boolean | string;
+    playTimeWarning: boolean | string | number;
     setSettings: (settings: Partial<{
         soundEnabled: boolean,
         showLiveWpm: boolean,
@@ -94,8 +96,8 @@ interface MonkeyTypeState {
         fontFamily: string,
         soundType: string,
         soundVolume: number,
-        soundOnError: boolean,
-        playTimeWarning: boolean
+        soundOnError: boolean | string,
+        playTimeWarning: boolean | string | number
     }>) => void;
 
     // History
@@ -119,6 +121,12 @@ export const useMonkeyTypeStore = create<MonkeyTypeState>()(
             setConfig: (config) => set({ config }),
             setLanguage: (language) => set({ language }),
             setTheme: (theme) => set({ theme }),
+            favoriteThemes: [],
+            toggleFavoriteTheme: (t) => set((state) => ({
+                favoriteThemes: state.favoriteThemes.includes(t)
+                    ? state.favoriteThemes.filter((x) => x !== t)
+                    : [...state.favoriteThemes, t]
+            })),
 
             isActive: false,
             isFinished: false,
@@ -170,8 +178,8 @@ export const useMonkeyTypeStore = create<MonkeyTypeState>()(
             fontFamily: 'monospace',
             soundType: 'mechanical',
             soundVolume: 0.5,
-            soundOnError: true,
-            playTimeWarning: true,
+            soundOnError: 'off',
+            playTimeWarning: 10,
             setSettings: (settings) => set((state) => ({ ...state, ...settings })),
 
             history: [],
@@ -196,6 +204,7 @@ export const useMonkeyTypeStore = create<MonkeyTypeState>()(
                 config: state.config,
                 language: state.language,
                 theme: state.theme,
+                favoriteThemes: state.favoriteThemes,
                 history: state.history,
                 soundEnabled: state.soundEnabled,
                 showLiveWpm: state.showLiveWpm,

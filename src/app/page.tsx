@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RotateCcw, Timer, Keyboard as KeyboardIcon, Type, Globe, Zap, MousePointer2, Lock, Search } from "lucide-react";
+import { RotateCcw, Timer, Keyboard as KeyboardIcon, Type, Globe, Zap, MousePointer2, Lock, Search, Music, Volume2, VolumeX, Bell, Check, Palette, Star, Terminal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMonkeyTypeStore, GameMode, GameConfig, Language, Theme, ChartPoint } from "@/hooks/use-monkeytype-store";
 import { THEMES } from "@/constants/themes";
@@ -145,8 +145,8 @@ const PerformanceChart = React.memo(({ data, activeTheme }: { data: ChartPoint[]
     const xTicks = Array.from({ length: totalTicks + 1 }, (_, i) => Math.round((i / totalTicks) * maxSec));
 
     return (
-        <div className="w-full relative mt-2">
-            <svg viewBox={`0 0 ${W} ${H + 30}`} className="w-full overflow-visible">
+        <div className="w-full relative mt-2 md:mt-4 aspect-[2/1] md:aspect-auto">
+            <svg viewBox={`0 0 ${W} ${H + 30}`} className="w-full h-full overflow-visible" preserveAspectRatio="xMidYMid meet">
                 {/* Horizontal grid + Y labels */}
                 {yTicks.map((t, i) => (
                     <g key={i}>
@@ -329,7 +329,7 @@ const Keyboard = React.memo(({
     activeTheme: typeof THEMES.codex
 }) => {
     return (
-        <div className="flex flex-col gap-2 origin-top mt-4">
+        <div className="hidden md:flex flex-col gap-2 origin-top mt-4">
             {KEYBOARD_ROWS.map((row, rowIndex) => (
                 <div key={rowIndex} className="flex justify-center gap-2">
                     {row.map((qwertyKey, charIndex) => {
@@ -410,14 +410,14 @@ Keyboard.displayName = "Keyboard";
 export default function MonkeyTypePage() {
     const {
         mode, config, language, theme, stats, chartData, timeLeft, isActive, isFinished, isWrongKeyboardLayout,
-        soundEnabled, showLiveWpm, showLiveAccuracy, fontSize, fontFamily, soundType, soundVolume, soundOnError, playTimeWarning,
+        soundEnabled, showLiveWpm, showLiveAccuracy, fontSize, fontFamily, soundType, soundVolume, soundOnError, playTimeWarning, favoriteThemes,
         setIsActive, setIsFinished, setTimeLeft, setStats, setChartData, resetLiveState, addHistory,
-        setMode, setConfig, setLanguage, setTheme, setIsWrongKeyboardLayout, setSettings
+        setMode, setConfig, setLanguage, setTheme, setIsWrongKeyboardLayout, setSettings, toggleFavoriteTheme
     } = useMonkeyTypeStore();
 
     // -- Advance Sound System --
-    const playClickSound = useCallback((forceType?: string) => {
-        if (!soundEnabled && !forceType) return;
+    const playClickSound = useCallback((forceType?: string, isPreview: boolean = false, overrideVolume?: number) => {
+        if (!soundEnabled && !isPreview) return;
         const type = forceType || soundType;
 
         try {
@@ -425,7 +425,10 @@ export default function MonkeyTypePage() {
             const audioCtx = new AudioContextClass();
             const masterGain = audioCtx.createGain();
             masterGain.connect(audioCtx.destination);
-            masterGain.gain.setValueAtTime(soundVolume * 0.2, audioCtx.currentTime); // Scaled volume
+            
+            // Use overrideVolume if provided, otherwise use global soundVolume
+            const effectiveVolume = overrideVolume !== undefined ? overrideVolume : soundVolume;
+            masterGain.gain.setValueAtTime(effectiveVolume * 0.2, audioCtx.currentTime); // Scaled volume
 
             const now = audioCtx.currentTime;
 
@@ -658,8 +661,10 @@ export default function MonkeyTypePage() {
         }
     }, [soundEnabled, soundType, soundVolume]);
 
-    const playErrorSound = useCallback(() => {
-        if (!soundOnError) return;
+    const playErrorSound = useCallback((forceType?: string | boolean, isPreview: boolean = false) => {
+        const errorSoundConfig = forceType !== undefined ? forceType : soundOnError;
+        if (errorSoundConfig === 'off' || errorSoundConfig === false) return; // 'off' or false
+
         try {
             const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext) as typeof AudioContext;
             const audioCtx = new AudioContextClass();
@@ -668,25 +673,109 @@ export default function MonkeyTypePage() {
             g.gain.setValueAtTime(soundVolume * 0.1, audioCtx.currentTime);
             const now = audioCtx.currentTime;
 
-            const osc = audioCtx.createOscillator();
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(100, now);
-            osc.frequency.linearRampToValueAtTime(50, now + 0.1);
+            // Synthesis definitions for different error types
+            if (errorSoundConfig === 'damage') {
+                // Short, sharp noise burst
+                const noise = audioCtx.createBufferSource();
+                const bufferSize = audioCtx.sampleRate * 0.1;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                noise.buffer = buffer;
+                
+                const bandpass = audioCtx.createBiquadFilter();
+                bandpass.type = 'bandpass';
+                bandpass.frequency.value = 1000;
+                
+                const eg = audioCtx.createGain();
+                eg.gain.setValueAtTime(0.5, now);
+                eg.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                
+                noise.connect(bandpass);
+                bandpass.connect(eg);
+                eg.connect(g);
+                noise.start(now);
+                noise.stop(now + 0.1);
 
-            const eg = audioCtx.createGain();
-            eg.gain.setValueAtTime(0.1, now);
-            eg.gain.linearRampToValueAtTime(0, now + 0.1);
+            } else if (errorSoundConfig === 'triangle') {
+                // Descending triangle wave (retro error)
+                const osc = audioCtx.createOscillator();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.2);
+                
+                const eg = audioCtx.createGain();
+                eg.gain.setValueAtTime(0.3, now);
+                eg.gain.linearRampToValueAtTime(0, now + 0.2);
+                
+                osc.connect(eg);
+                eg.connect(g);
+                osc.start(now);
+                osc.stop(now + 0.2);
 
-            osc.connect(eg);
-            eg.connect(g);
-            osc.start();
-            osc.stop(now + 0.1);
-            setTimeout(() => audioCtx.close(), 200);
+            } else if (errorSoundConfig === 'square') {
+                // Harsh short square beep
+                const osc = audioCtx.createOscillator();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(150, now);
+                
+                const eg = audioCtx.createGain();
+                eg.gain.setValueAtTime(0.2, now);
+                eg.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                
+                osc.connect(eg);
+                eg.connect(g);
+                osc.start(now);
+                osc.stop(now + 0.1);
+
+            } else if (errorSoundConfig === 'punch_miss') {
+                // Quick whoosh noise burst with low-pass filter
+                const noise = audioCtx.createBufferSource();
+                const bufferSize = audioCtx.sampleRate * 0.15;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                noise.buffer = buffer;
+                
+                const lowpass = audioCtx.createBiquadFilter();
+                lowpass.type = 'lowpass';
+                lowpass.frequency.setValueAtTime(800, now);
+                lowpass.frequency.linearRampToValueAtTime(100, now + 0.15);
+                
+                const eg = audioCtx.createGain();
+                eg.gain.setValueAtTime(0.4, now);
+                eg.gain.linearRampToValueAtTime(0, now + 0.15);
+                
+                noise.connect(lowpass);
+                lowpass.connect(eg);
+                eg.connect(g);
+                noise.start(now);
+                noise.stop(now + 0.15);
+
+            } else {
+                // Default fallback beep (legacy)
+                const osc = audioCtx.createOscillator();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(100, now);
+                osc.frequency.linearRampToValueAtTime(50, now + 0.1);
+                
+                const eg = audioCtx.createGain();
+                eg.gain.setValueAtTime(0.1, now);
+                eg.gain.linearRampToValueAtTime(0, now + 0.1);
+                
+                osc.connect(eg);
+                eg.connect(g);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            }
+
+            setTimeout(() => audioCtx.close(), 300);
         } catch { }
     }, [soundOnError, soundVolume]);
 
-    const playWarningSound = useCallback(() => {
-        if (!playTimeWarning) return;
+    const playWarningSound = useCallback((isPreview: boolean = false) => {
+        if (!playTimeWarning && !isPreview) return;
+        if (playTimeWarning === 'off' && !isPreview) return;
         try {
             const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext) as typeof AudioContext;
             const audioCtx = new AudioContextClass();
@@ -885,7 +974,8 @@ export default function MonkeyTypePage() {
             interval = setInterval(() => {
                 const nextTime = useMonkeyTypeStore.getState().timeLeft - 1;
                 setTimeLeft(nextTime);
-                if (nextTime === 10) playWarningSound();
+                const warningTime = typeof playTimeWarning === 'string' && playTimeWarning !== 'off' ? parseInt(playTimeWarning) : (typeof playTimeWarning === 'number' ? playTimeWarning : (playTimeWarning === true ? 10 : null));
+                if (warningTime !== null && nextTime === warningTime) playWarningSound();
             }, 1000);
         } else if (mode === "time" && timeLeft === 0) {
             finishTestRef.current();
@@ -1050,6 +1140,8 @@ export default function MonkeyTypePage() {
         id: string;
         label: string;
         category: string;
+        icon?: React.ReactNode;
+        isActive?: boolean;
         action: () => void;
     }
 
@@ -1063,8 +1155,8 @@ export default function MonkeyTypePage() {
             // Configuration Groups
             list.push({ id: "group-sound-click", label: "Sound on Click...", category: "Sound", action: () => { setActiveCommandGroup('sound-click'); setSelectedIndex(0); setSearchQuery(""); } });
             list.push({ id: "group-sound-volume", label: "Sound on Volume...", category: "Sound", action: () => { setActiveCommandGroup('sound-volume'); setSelectedIndex(0); setSearchQuery(""); } });
-            list.push({ id: "toggle-sound-error", label: `Sound on Error: ${soundOnError ? 'ON' : 'OFF'}`, category: "Sound", action: () => setSettings({ soundOnError: !soundOnError }) });
-            list.push({ id: "toggle-time-warning", label: `Play Time Warning: ${playTimeWarning ? 'ON' : 'OFF'}`, category: "Sound", action: () => setSettings({ playTimeWarning: !playTimeWarning }) });
+            list.push({ id: "group-sound-error", label: "Sound on Error...", category: "Sound", action: () => { setActiveCommandGroup('sound-error'); setSelectedIndex(0); setSearchQuery(""); } });
+            list.push({ id: "group-time-warning", label: "Play Time Warning...", category: "Sound", action: () => { setActiveCommandGroup('time-warning'); setSelectedIndex(0); setSearchQuery(""); } });
 
             // Core Settings
             list.push({ id: "mode-time", label: "Time Mode", category: "Mode", action: () => { setMode("time"); setConfig(30); resetTest(); setIsSearchOpen(false); } });
@@ -1075,8 +1167,28 @@ export default function MonkeyTypePage() {
             list.push({ id: "lang-km", label: "Khmer", category: "Language", action: () => { setLanguage("khmer"); resetTest(); setIsSearchOpen(false); } });
 
             // Themes
-            Object.entries(THEMES).forEach(([id, t]) => {
-                list.push({ id: `theme-${id}`, label: (t as any).name || id, category: "Theme", action: () => { setTheme(id as Theme); setIsSearchOpen(false); } });
+            list.push({ id: "group-theme-select", label: "Theme...", category: "Theme", icon: <Palette className="w-4 h-4 opacity-70" />, action: () => { setActiveCommandGroup('theme-select'); setSelectedIndex(0); setSearchQuery(""); } });
+            list.push({ id: "action-theme-custom", label: "Custom theme...", category: "Theme", action: () => { setIsSearchOpen(false); } });
+            
+            const isFav = favoriteThemes.includes(theme);
+            list.push({ 
+                id: "action-theme-favorite", 
+                label: isFav ? "Remove Current theme from favorite" : "Add Current theme to favorite", 
+                category: "Theme", 
+                icon: <Star className={cn("w-4 h-4", isFav ? "fill-current text-[#e2b714]" : "opacity-70")} />,
+                action: () => { toggleFavoriteTheme(theme); setIsSearchOpen(false); } 
+            });
+            
+            list.push({ 
+                id: "action-theme-random", 
+                label: "Random theme...", 
+                category: "Theme", 
+                action: () => { 
+                    const themeKeys = Object.keys(THEMES) as Theme[];
+                    const randomTheme = themeKeys[Math.floor(Math.random() * themeKeys.length)];
+                    setTheme(randomTheme); 
+                    setIsSearchOpen(false); 
+                } 
             });
         } else if (activeCommandGroup === 'sound-click') {
             // Click Sounds Sub-menu
@@ -1096,26 +1208,101 @@ export default function MonkeyTypePage() {
                 id: `sound-${s.id}`,
                 label: s.label,
                 category: "Click Sound",
+                icon: <Music className="w-4 h-4 opacity-70" />,
+                isActive: soundType === s.id,
                 action: () => { setSettings({ soundType: s.id, soundEnabled: true }); setIsSearchOpen(false); setActiveCommandGroup(null); setSearchQuery(""); }
             }));
         } else if (activeCommandGroup === 'sound-volume') {
-            // Volume Sub-menu
-            const volumeOptions = [
-                { id: 'vol-quiet', label: 'Quiet (25%)', val: 0.25 },
-                { id: 'vol-medium', label: 'Medium (50%)', val: 0.5 },
-                { id: 'vol-loud', label: 'Loud (100%)', val: 1.0 },
-                { id: 'vol-custom', label: 'Custom Setting...', val: 0.75 },
+            // Volume Sub-menu: 0% to 100% in 10% steps
+            const volumeOptions = Array.from({ length: 11 }, (_, i) => {
+                const percentage = i * 10;
+                const val = percentage / 100;
+                const label = percentage === 0 ? 'Mute (0%)' : `${percentage}%`;
+                
+                return {
+                    id: `vol-${percentage}`,
+                    label,
+                    val,
+                    category: "Volume",
+                    icon: <Volume2 className="w-4 h-4 opacity-70" />,
+                    isActive: soundVolume === val,
+                    action: () => { 
+                        setSettings({ soundVolume: val, soundEnabled: val > 0 }); 
+                        setIsSearchOpen(false); 
+                        setActiveCommandGroup(null); 
+                    }
+                };
+            });
+            volumeOptions.reverse().forEach(v => list.push(v));
+        } else if (activeCommandGroup === 'sound-error') {
+            const errorOptions = [
+                { id: 'off', label: 'OFF' },
+                { id: 'damage', label: 'Damage' },
+                { id: 'triangle', label: 'Triangle' },
+                { id: 'square', label: 'Square' },
+                { id: 'punch_miss', label: 'Punch Miss' }
             ];
-            volumeOptions.forEach(v => list.push({
-                id: v.id,
-                label: v.label,
-                category: "Volume",
-                action: () => { setSettings({ soundVolume: v.val }); setIsSearchOpen(false); setActiveCommandGroup(null); }
+            errorOptions.forEach(eo => list.push({
+                id: `sound-error-${eo.id}`,
+                label: eo.label,
+                category: "Error Sound",
+                icon: <VolumeX className="w-4 h-4 opacity-70" />,
+                isActive: soundOnError === eo.id,
+                action: () => { 
+                    setSettings({ soundOnError: eo.id });
+                    setIsSearchOpen(false);
+                    setActiveCommandGroup(null);
+                }
             }));
+        } else if (activeCommandGroup === 'time-warning') {
+            const warningOptions = [
+                { id: 'off', label: 'OFF', val: 'off' },
+                { id: '1s', label: '1 seconds', val: 1 },
+                { id: '3s', label: '3 seconds', val: 3 },
+                { id: '5s', label: '5 seconds', val: 5 },
+                { id: '10s', label: '10 seconds', val: 10 }
+            ];
+            warningOptions.forEach(wo => list.push({
+                id: `time-warning-${wo.id}`,
+                label: wo.label,
+                category: "Time Warning",
+                icon: <Bell className="w-4 h-4 opacity-70" />,
+                isActive: playTimeWarning === wo.val,
+                action: () => { 
+                    setSettings({ playTimeWarning: wo.val });
+                    setIsSearchOpen(false);
+                    setActiveCommandGroup(null);
+                }
+            }));
+        } else if (activeCommandGroup === 'theme-select') {
+            const themeList: CommandItem[] = [];
+            Object.entries(THEMES).forEach(([id, t]) => {
+                const isFav = favoriteThemes.includes(id as Theme);
+                themeList.push({ 
+                    id: `theme-${id}`, 
+                    label: (t as any).name || id, 
+                    category: "Theme", 
+                    icon: isFav ? <Star className="w-4 h-4 fill-current text-[#e2b714]" /> : undefined,
+                    isActive: theme === id,
+                    action: () => { 
+                        setTheme(id as Theme); 
+                        setIsSearchOpen(false); 
+                        setActiveCommandGroup(null);
+                    } 
+                });
+            });
+            themeList.sort((a, b) => {
+                const aFav = favoriteThemes.includes(a.id.replace('theme-', '') as Theme);
+                const bFav = favoriteThemes.includes(b.id.replace('theme-', '') as Theme);
+                if (aFav && !bFav) return -1;
+                if (!aFav && bFav) return 1;
+                return a.label.localeCompare(b.label);
+            });
+            themeList.forEach(t => list.push(t));
         }
 
         return list;
-    }, [activeCommandGroup, soundOnError, playTimeWarning, resetTest, setSettings, setTheme, setMode, setConfig, setLanguage, language]);
+    }, [activeCommandGroup, soundOnError, playTimeWarning, resetTest, setSettings, setTheme, setMode, setConfig, setLanguage, language, favoriteThemes, theme, toggleFavoriteTheme]);
 
     const filteredCommands = useMemo(() => {
         const q = searchQuery.toLowerCase().trim();
@@ -1147,12 +1334,19 @@ export default function MonkeyTypePage() {
                     if (nextIndex !== selectedIndex) {
                         setSelectedIndex(nextIndex);
                         const cmd = filteredCommands[nextIndex];
-                        if (cmd.category === "Sound Click") {
+                        if (cmd.category === "Click Sound") {
                             const soundId = cmd.id.replace('sound-', '');
-                            playClickSound(soundId);
+                            playClickSound(soundId, true);
                         } else if (cmd.category === "Volume") {
-                            // Play a test sound at the selected volume
-                            playClickSound();
+                            // Play a test sound at the highlighted volume
+                            const match = cmd.label.match(/(\d+)%/);
+                            const vol = match ? parseInt(match[1]) / 100 : soundVolume;
+                            playClickSound(undefined, true, vol);
+                        } else if (cmd.category === "Error Sound") {
+                            const errorId = cmd.id.replace('sound-error-', '');
+                            playErrorSound(errorId, true);
+                        } else if (cmd.category === "Time Warning") {
+                            playWarningSound(true);
                         }
                     }
                 } else if (e.key === "ArrowUp") {
@@ -1161,18 +1355,37 @@ export default function MonkeyTypePage() {
                     if (prevIndex !== selectedIndex) {
                         setSelectedIndex(prevIndex);
                         const cmd = filteredCommands[prevIndex];
-                        if (cmd.category === "Sound Click") {
+                        if (cmd.category === "Click Sound") {
                             const soundId = cmd.id.replace('sound-', '');
-                            playClickSound(soundId);
+                            playClickSound(soundId, true);
                         } else if (cmd.category === "Volume") {
                             // Play a test sound at the selected volume
-                            playClickSound();
+                            playClickSound(undefined, true);
+                        } else if (cmd.category === "Error Sound") {
+                            const errorId = cmd.id.replace('sound-error-', '');
+                            playErrorSound(errorId, true);
+                        } else if (cmd.category === "Time Warning") {
+                            playWarningSound(true);
                         }
                     }
                 } else if (e.key === "Enter") {
                     e.preventDefault();
                     if (filteredCommands[selectedIndex]) {
-                        filteredCommands[selectedIndex].action();
+                        const cmd = filteredCommands[selectedIndex];
+                        if (cmd.category === "Click Sound") {
+                            const soundId = cmd.id.replace('sound-', '');
+                            playClickSound(soundId, true);
+                        } else if (cmd.category === "Volume") {
+                            const match = cmd.label.match(/(\d+)%/);
+                            const vol = match ? parseInt(match[1]) / 100 : soundVolume;
+                            playClickSound(undefined, true, vol);
+                        } else if (cmd.category === "Error Sound") {
+                            const errorId = cmd.id.replace('sound-error-', '');
+                            playErrorSound(errorId, true);
+                        } else if (cmd.category === "Time Warning") {
+                            playWarningSound(true);
+                        }
+                        cmd.action();
                     }
                 }
                 return;
@@ -1198,6 +1411,13 @@ export default function MonkeyTypePage() {
                 setSearchQuery("");
                 setSelectedIndex(0);
                 setTimeout(() => searchInputRef.current?.focus(), 50);
+                return;
+            }
+
+            if (isSearchOpen && e.key === "Backspace" && searchQuery === "" && activeCommandGroup) {
+                e.preventDefault();
+                setActiveCommandGroup(null);
+                setSelectedIndex(0);
                 return;
             }
 
@@ -1487,20 +1707,36 @@ export default function MonkeyTypePage() {
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="flex items-center px-4 border-b border-white/5" style={{ backgroundColor: activeTheme.bgAlt }}>
-                                <Search className="w-5 h-5 opacity-50" style={{ color: activeTheme.text }} />
+                                <Search className="w-5 h-5 opacity-50 shrink-0" style={{ color: activeTheme.text }} />
                                 <input
                                     ref={searchInputRef}
                                     type="text"
-                                    placeholder="Search commands..."
+                                    placeholder={
+                                        activeCommandGroup === 'sound-click' ? 'Sound on click...' : 
+                                        activeCommandGroup === 'sound-volume' ? 'Sound volume...' : 
+                                        activeCommandGroup === 'sound-error' ? 'Sound error...' : 
+                                        activeCommandGroup === 'time-warning' ? 'Play time warning...' : 
+                                        activeCommandGroup === 'theme-select' ? 'Search themes...' : 
+                                        'Search commands...'
+                                    }
                                     className="w-full bg-transparent border-none outline-none py-4 px-3 text-lg placeholder-white/20"
                                     style={{ color: activeTheme.text }}
                                     value={searchQuery}
                                     onChange={(e) => { setSearchQuery(e.target.value); setSelectedIndex(0); }}
+                                    onKeyDown={(e) => {
+                                        // Handle backspace when input is empty to go back
+                                        if (e.key === "Backspace" && searchQuery === "" && activeCommandGroup) {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setActiveCommandGroup(null);
+                                            setSelectedIndex(0);
+                                        }
+                                    }}
                                 />
-                                <span className="text-xs opacity-50 px-2 py-1 rounded bg-black/20" style={{ color: activeTheme.textDim }}>ESC</span>
+                                <span className="text-xs opacity-50 px-2 py-1 rounded bg-black/20 shrink-0" style={{ color: activeTheme.textDim }}>ESC</span>
                             </div>
                             <div className="max-h-[60vh] overflow-y-auto py-2 custom-scrollbar">
-                                {searchQuery.trim() === '' ? (
+                                {searchQuery.trim() === '' && !activeCommandGroup ? (
                                     <div className="px-6 py-10 text-center space-y-4">
                                         <div className="text-sm opacity-40" style={{ color: activeTheme.textDim }}>
                                             Type to search commands
@@ -1519,7 +1755,22 @@ export default function MonkeyTypePage() {
                                     filteredCommands.map((cmd, i) => (
                                         <div
                                             key={cmd.id}
-                                            onClick={() => cmd.action()}
+                                            onClick={() => {
+                                                if (cmd.category === "Click Sound") {
+                                                    const soundId = cmd.id.replace('sound-', '');
+                                                    playClickSound(soundId, true);
+                                                } else if (cmd.category === "Volume") {
+                                                    const match = cmd.label.match(/(\d+)%/);
+                                                    const vol = match ? parseInt(match[1]) / 100 : soundVolume;
+                                                    playClickSound(undefined, true, vol);
+                                                } else if (cmd.category === "Error Sound") {
+                                                    const errorId = cmd.id.replace('sound-error-', '');
+                                                    playErrorSound(errorId, true);
+                                                } else if (cmd.category === "Time Warning") {
+                                                    playWarningSound(true);
+                                                }
+                                                cmd.action();
+                                            }}
                                             onMouseEnter={() => setSelectedIndex(i)}
                                             className={cn(
                                                 "px-6 py-3 flex items-center justify-between cursor-pointer transition-colors duration-150",
@@ -1542,9 +1793,13 @@ export default function MonkeyTypePage() {
                                                         })()}
                                                     </div>
                                                 )}
+                                                {cmd.icon && cmd.icon}
                                                 <span className="font-semibold">{cmd.label}</span>
                                                 {cmd.category === 'Theme' && theme === cmd.id.replace('theme-', '') && (
                                                     <span className="text-[10px] px-1.5 py-0.5 rounded font-bold" style={{ backgroundColor: activeTheme.primary, color: activeTheme.bg }}>active</span>
+                                                )}
+                                                {cmd.isActive && (
+                                                    <Check className="w-4 h-4 opacity-80" style={{ color: activeTheme.primary }} />
                                                 )}
                                             </div>
                                             <span className="text-xs px-2 py-1 rounded-full opacity-60" style={{ backgroundColor: activeTheme.bgAlt }}>
@@ -2211,6 +2466,15 @@ export default function MonkeyTypePage() {
             <div className="fixed bottom-3 sm:bottom-6 right-3 sm:right-6 text-[8px] sm:text-[10px] font-bold tracking-[0.3em] uppercase opacity-20 pointer-events-none" style={{ color: activeTheme.textDim }}>
                 TypeFlow 1.0
             </div>
+
+            <button
+                onClick={() => setIsSearchOpen(true)}
+                className="fixed lg:hidden bottom-3 sm:bottom-6 left-3 sm:left-6 z-50 p-2.5 sm:p-3 rounded-full shadow-lg transition-transform hover:scale-105 active:scale-95 flex items-center justify-center opacity-80 hover:opacity-100"
+                style={{ backgroundColor: activeTheme.primary, color: activeTheme.bg }}
+                title="Open Command Palette"
+            >
+                <Terminal className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
 
             <Footer />
         </div >
