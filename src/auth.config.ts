@@ -34,7 +34,12 @@ export default {
 
                 const passwordsMatch = await bcrypt.compare(password as string, user.password);
 
-                if (passwordsMatch) return user;
+                if (passwordsMatch) {
+                    return {
+                        ...user,
+                        role: user.role as "user" | "admin" | "superadmin"
+                    };
+                }
 
                 return null;
             },

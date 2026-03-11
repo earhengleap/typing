@@ -3,6 +3,7 @@ import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db } from "@/db";
 import authConfig from "./auth.config";
 import { accounts, sessions, users, verificationTokens } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
     adapter: DrizzleAdapter(db, {
@@ -21,8 +22,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 token.id = user.id;
                 // @ts-ignore
                 token.level = user.level as number;
-                // @ts-ignore
-                token.role = user.role as string;
+                
+                // Automatically assign 'superadmin' role based on SUPER_ADMIN_EMAILS
+                let currentRole = user.role as string;
+                if (user.email) {
+                    const superAdmins = (process.env.SUPER_ADMIN_EMAILS || "")
+                        .split(",")
+                        .map(email => email.trim().toLowerCase());
+                    
+                    if (superAdmins.includes(user.email.toLowerCase())) {
+                        currentRole = "superadmin";
+                        // Update the database to reflect this, if it wasn't already updated
+                        if (user.role !== "superadmin" && user.id) {
+                            try {
+                                await db.update(users).set({ role: "superadmin" }).where(eq(users.id, user.id));
+                            } catch (e) {
+                                console.error("Failed to auto-elevate superadmin in DB:", e);
+                            }
+                        }
+                    }
+                }
+                
+                token.role = currentRole;
             }
             if (trigger === "update" && (session?.level || session?.role)) {
                 if (session.level !== undefined) token.level = session.level;

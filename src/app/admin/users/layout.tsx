@@ -2,7 +2,7 @@ import { auth } from "@/auth";
 import { notFound } from "next/navigation";
 import React from "react";
 
-export default async function AdminNotificationsLayout({
+export default async function AdminUsersLayout({
     children,
 }: {
     children: React.ReactNode;
@@ -14,9 +14,9 @@ export default async function AdminNotificationsLayout({
     }
 
     const role = session.user.role;
-    const isAdmin = role === "admin" || role === "superadmin";
+    const isSuperAdmin = role === "superadmin";
 
-    if (!isAdmin) {
+    if (!isSuperAdmin) {
         notFound();
     }
 

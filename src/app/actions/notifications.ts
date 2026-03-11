@@ -70,7 +70,7 @@ export async function getUsers() {
     try {
         const session = await auth();
         // @ts-ignore
-        if (session?.user?.role !== "admin") {
+        if (session?.user?.role !== "admin" && session?.user?.role !== "superadmin") {
             throw new Error("Unauthorized");
         }
 
@@ -94,8 +94,8 @@ export async function sendNotification(data: {
 }) {
     try {
         const session = await auth();
-        // @ts-ignore
-        if (session?.user?.role !== "admin") {
+        const role = session?.user?.role;
+        if (role !== "admin" && role !== "superadmin") {
             throw new Error("Unauthorized");
         }
 
@@ -115,8 +115,8 @@ export async function sendNotification(data: {
 export async function getSentNotifications() {
     try {
         const session = await auth();
-        // @ts-ignore
-        if (session?.user?.role !== "admin") {
+        const role = session?.user?.role;
+        if (role !== "admin" && role !== "superadmin") {
             throw new Error("Unauthorized");
         }
 
@@ -140,31 +140,6 @@ export async function promoteUserToAdmin(email: string) {
     } catch (e) {
         console.error("Error promoting user:", e);
         return { success: false };
-    }
-}
-
-export async function verifyAdminPassword(password: string) {
-    try {
-        const session = await auth();
-        if (!session?.user?.id) return { success: false, error: "Not logged in" };
-
-        const masterPassword = process.env.ADMIN_SETUP_PASSWORD;
-        if (!masterPassword) {
-            console.error("ADMIN_SETUP_PASSWORD is not set in environment variables");
-            return { success: false, error: "System not configured" };
-        }
-
-        if (password === masterPassword) {
-            await db.update(users)
-                .set({ role: "admin" })
-                .where(eq(users.id, session.user.id));
-            return { success: true };
-        } else {
-            return { success: false, error: "Invalid master key" };
-        }
-    } catch (e) {
-        console.error("Error verifying admin password:", e);
-        return { success: false, error: "Server error" };
     }
 }
 
