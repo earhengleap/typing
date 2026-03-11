@@ -36,10 +36,10 @@ export function Header({ activeTheme }: HeaderProps) {
         <header className="relative w-full flex items-center pt-4 pb-2 z-50 px-4 md:px-[180px] mb-4 h-16 md:h-20">
                 <div className="flex w-full items-center justify-between">
                     {/* Left Group: Logo + Navigation Icons */}
-                    <div className="flex items-center gap-4 sm:gap-6">
-                        <Link href="/" className="flex items-center gap-2 group shrink-0 cursor-pointer">
+                    <div className="flex flex-wrap items-center gap-4 sm:gap-6 w-full">
+                        <Link href="/" className="flex items-center gap-1 sm:gap-2 group cursor-pointer pl-1">
                             <Type className="w-6 h-6 md:w-8 md:h-8 transition-transform group-hover:scale-110" style={{ color: activeTheme.primary }} />
-                            <h1 className="text-2xl md:text-[32px] tracking-tight font-bold ml-0.5 md:ml-1 relative" style={{ color: activeTheme.textDim }}>
+                            <h1 className="text-xl sm:text-2xl md:text-[32px] tracking-tight font-bold ml-0 relative" style={{ color: activeTheme.textDim }}>
                                 <span style={{ color: activeTheme.text }}>type</span>flow
                             </h1>
                         </Link>
@@ -101,7 +101,7 @@ export function Header({ activeTheme }: HeaderProps) {
                     </div>
 
                     {/* Spacer */}
-                    <div className="flex-1" suppressHydrationWarning />
+                    <div className="hidden sm:block flex-1" suppressHydrationWarning />
 
                     {/* Right Group: Notifications + Profile */}
                     <div className="flex items-center gap-2 sm:gap-4 shrink-0">

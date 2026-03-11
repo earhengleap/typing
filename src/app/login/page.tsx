@@ -65,6 +65,11 @@ export default function LoginPage() {
         formData.append("password", registerData.password);
         formData.append("verifyPassword", registerData.verifyPassword);
 
+        const refId = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get("ref") : null;
+        if (refId) {
+            formData.append("ref", refId);
+        }
+
         const result = await registerUser(formData);
         setIsLoading(false);
 

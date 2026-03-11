@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/db";
-import { users, passwordResetTokens } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { users, passwordResetTokens, referrals, userAchievements } from "@/db/schema";
+import { eq, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import crypto from "crypto";
@@ -133,11 +133,57 @@ export async function registerUser(formData: FormData) {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        await db.insert(users).values({
+        const [newUser] = await db.insert(users).values({
             name,
             email,
             password: hashedPassword,
-        });
+            xp: 0, // Gets updated below if referred
+        }).returning({ id: users.id });
+
+        // Handle Referral Invite Rewards
+        const refId = formData.get("ref") as string | null;
+        if (refId && newUser?.id) {
+            try {
+                // Verify the referrer exists
+                const [referrerExists] = await db.select().from(users).where(eq(users.id, refId));
+                if (referrerExists && referrerExists.id !== newUser.id) {
+                    // Record the referral
+                    await db.insert(referrals).values({
+                        referrerId: referrerExists.id,
+                        referredId: newUser.id,
+                    });
+
+                    // REFERRED USER REWARDS (+50 XP & Achievement)
+                    await db.update(users).set({ xp: sql`${users.xp} + 50` }).where(eq(users.id, newUser.id));
+                    await db.insert(userAchievements).values({
+                        userId: newUser.id,
+                        achievementId: "a_friends_call"
+                    }).onConflictDoNothing();
+
+                    // REFERRER REWARDS (+10 XP)
+                    await db.update(users).set({ xp: sql`${users.xp} + 10` }).where(eq(users.id, referrerExists.id));
+                    
+                    // Check Referrer Achievements
+                    const results = await db.select().from(referrals).where(eq(referrals.referrerId, referrerExists.id));
+                    const inviteCount = results.length;
+
+                    if (inviteCount >= 1) {
+                        await db.insert(userAchievements).values({
+                            userId: referrerExists.id,
+                            achievementId: "the_recruiter"
+                        }).onConflictDoNothing();
+                    }
+                    if (inviteCount >= 5) {
+                        await db.insert(userAchievements).values({
+                            userId: referrerExists.id,
+                            achievementId: "community_builder"
+                        }).onConflictDoNothing();
+                    }
+                }
+            } catch (err) {
+                console.error("[AUTH] Failed to process referral rewards:", err);
+            }
+        }
 
         // Send Welcome Email in background
         after(async () => {

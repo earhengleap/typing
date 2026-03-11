@@ -135,3 +135,16 @@ export const notifications = pgTable("notification", {
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
 });
 
+// Invite Links / Referral Tracking
+export const referrals = pgTable("referral", {
+    id: text("id")
+        .primaryKey()
+        .$defaultFn(() => crypto.randomUUID()),
+    referrerId: text("referrer_id")
+        .notNull()
+        .references(() => users.id, { onDelete: "cascade" }),
+    referredId: text("referred_id")
+        .notNull()
+        .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+});

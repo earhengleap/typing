@@ -5,6 +5,8 @@ import {
     Flame,
     Award,
     Wind,
+    Users,
+    HeartHandshake,
     LucideIcon
 } from "lucide-react";
 
@@ -72,5 +74,26 @@ export const ACHIEVEMENTS: Record<string, Achievement> = {
         description: "Maintain a 7-day typing streak.",
         icon: Flame,
         color: "#ef4444"
+    },
+    a_friends_call: {
+        id: "a_friends_call",
+        name: "A Friend's Call",
+        description: "Join the platform via an invite link.",
+        icon: HeartHandshake,
+        color: "#ec4899"
+    },
+    the_recruiter: {
+        id: "the_recruiter",
+        name: "The Recruiter",
+        description: "Successfully invite 1 friend to join.",
+        icon: Users,
+        color: "#14b8a6"
+    },
+    community_builder: {
+        id: "community_builder",
+        name: "Community Builder",
+        description: "Successfully invite 5 friends to join.",
+        icon: Award,
+        color: "#eab308"
     },
 };

@@ -1874,41 +1874,44 @@ export default function MonkeyTypePage() {
                         className="w-full max-w-[var(--content-max-w)] flex-1 flex flex-col justify-center gap-2 sm:gap-4 md:gap-6 lg:gap-8 min-h-0"
                     >
                         {/* Mode Selector Config Bar */}
-                        <div className="flex flex-wrap items-center justify-center gap-y-2 p-1.5 sm:p-2 rounded-xl self-center text-[10px] sm:text-xs font-bold shadow-2xl theme-transition max-w-full" style={{ backgroundColor: 'var(--mt-bg-alt)' }}>
-                            <div className="flex items-center gap-1 sm:gap-3 px-2 sm:px-3">
-                                <button onClick={() => { setMode("time"); setConfig(30); resetTest(30, "time"); }} className={cn("flex items-center gap-1 sm:gap-1.5 py-1.5 sm:py-2 transition-all outline-none rounded-md px-1.5 sm:px-2 cursor-pointer", mode === "time" ? "text-[var(--mt-primary)] bg-[var(--mt-bg)]/50" : "hover:text-[var(--mt-text)]")}>
+                        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 p-2 sm:p-2 rounded-xl self-center text-[10px] sm:text-xs font-bold shadow-2xl theme-transition max-w-full" style={{ backgroundColor: 'var(--mt-bg-alt)' }}>
+                            {/* Group 1: Time / Words */}
+                            <div className="flex items-center gap-1 sm:gap-2">
+                                <button onClick={() => { setMode("time"); setConfig(30); resetTest(30, "time"); }} className={cn("flex items-center gap-1 sm:gap-1.5 py-1 sm:py-1.5 px-2 sm:px-3 transition-all outline-none rounded-lg cursor-pointer", mode === "time" ? "text-[var(--mt-primary)] bg-[var(--mt-bg)]/50" : "hover:text-[var(--mt-text)]")}>
                                     <Timer className="w-3.5 h-3.5" /> time
                                 </button>
-                                <button onClick={() => { setMode("words"); setConfig(25); resetTest(25, "words"); }} className={cn("flex items-center gap-1 sm:gap-1.5 py-1.5 sm:py-2 transition-all outline-none rounded-md px-1.5 sm:px-2 cursor-pointer", mode === "words" ? "text-[var(--mt-primary)] bg-[var(--mt-bg)]/50" : "hover:text-[var(--mt-text)]")}>
+                                <button onClick={() => { setMode("words"); setConfig(25); resetTest(25, "words"); }} className={cn("flex items-center gap-1 sm:gap-1.5 py-1 sm:py-1.5 px-2 sm:px-3 transition-all outline-none rounded-lg cursor-pointer", mode === "words" ? "text-[var(--mt-primary)] bg-[var(--mt-bg)]/50" : "hover:text-[var(--mt-text)]")}>
                                     <Type className="w-3.5 h-3.5" /> words
                                 </button>
                             </div>
 
-                            <div className="w-[3px] h-[3px] sm:w-[2px] sm:h-4 rounded-full bg-[var(--mt-text-dim)] opacity-20" />
+                            <div className="hidden sm:block w-[3px] h-4 rounded-full bg-[var(--mt-text-dim)] opacity-20" />
 
-                            <div className="flex items-center gap-1 sm:gap-3 px-2 sm:px-3">
+                            {/* Group 2: Values (15/30/60... or 10/25/50...) */}
+                            <div className="flex items-center justify-center gap-1 sm:gap-2">
                                 {mode === "time" ? (
                                     [15, 30, 60, 120].map(t => (
-                                        <button key={t} onClick={() => { setConfig(t as GameConfig); resetTest(t as GameConfig); }} className={cn("py-1.5 sm:py-2 transition-all outline-none rounded-md px-1.5 sm:px-2 cursor-pointer", config === t ? "text-[var(--mt-primary)] bg-[var(--mt-bg)]/50" : "hover:text-[var(--mt-text)]")}>
+                                        <button key={t} onClick={() => { setConfig(t as GameConfig); resetTest(t as GameConfig); }} className={cn("py-1 sm:py-1.5 px-2 sm:px-3 transition-all outline-none rounded-lg cursor-pointer", config === t ? "text-[var(--mt-primary)] bg-[var(--mt-bg)]/50" : "hover:text-[var(--mt-text)]")}>
                                             {t}
                                         </button>
                                     ))
                                 ) : (
                                     [10, 25, 50, 100].map(w => (
-                                        <button key={w} onClick={() => { setConfig(w as GameConfig); resetTest(w as GameConfig); }} className={cn("py-1.5 sm:py-2 transition-all outline-none rounded-md px-1.5 sm:px-2 cursor-pointer", config === w ? "text-[var(--mt-primary)] bg-[var(--mt-bg)]/50" : "hover:text-[var(--mt-text)]")}>
+                                        <button key={w} onClick={() => { setConfig(w as GameConfig); resetTest(w as GameConfig); }} className={cn("py-1 sm:py-1.5 px-2 sm:px-3 transition-all outline-none rounded-lg cursor-pointer", config === w ? "text-[var(--mt-primary)] bg-[var(--mt-bg)]/50" : "hover:text-[var(--mt-text)]")}>
                                             {w}
                                         </button>
                                     ))
                                 )}
                             </div>
 
-                            <div className="w-[3px] h-[3px] sm:w-[2px] sm:h-4 rounded-full bg-[var(--mt-text-dim)] opacity-20" />
+                            <div className="hidden sm:block w-[3px] h-4 rounded-full bg-[var(--mt-text-dim)] opacity-20" />
 
-                            <div className="flex items-center gap-1 sm:gap-3 px-2 sm:px-3">
-                                <button onClick={() => { setLanguage("english"); resetTest(undefined, undefined, "english"); }} className={cn("py-1.5 sm:py-2 transition-all outline-none rounded-md px-1.5 sm:px-2 cursor-pointer", language === "english" ? "text-[var(--mt-primary)] bg-[var(--mt-bg)]/50" : "hover:text-[var(--mt-text)]")}>
+                            {/* Group 3: Language */}
+                            <div className="flex items-center gap-1 sm:gap-2">
+                                <button onClick={() => { setLanguage("english"); resetTest(undefined, undefined, "english"); }} className={cn("py-1 sm:py-1.5 px-2 sm:px-3 transition-all outline-none rounded-lg cursor-pointer", language === "english" ? "text-[var(--mt-primary)] bg-[var(--mt-bg)]/50" : "hover:text-[var(--mt-text)]")}>
                                     english
                                 </button>
-                                <button onClick={() => { setLanguage("khmer"); resetTest(undefined, undefined, "khmer"); }} className={cn("py-1.5 sm:py-2 transition-all outline-none rounded-md px-1.5 sm:px-2 cursor-pointer", language === "khmer" ? "text-[var(--mt-primary)] bg-[var(--mt-bg)]/50" : "hover:text-[var(--mt-text)]")}>
+                                <button onClick={() => { setLanguage("khmer"); resetTest(undefined, undefined, "khmer"); }} className={cn("py-1 sm:py-1.5 px-2 sm:px-3 transition-all outline-none rounded-lg cursor-pointer", language === "khmer" ? "text-[var(--mt-primary)] bg-[var(--mt-bg)]/50" : "hover:text-[var(--mt-text)]")}>
                                     khmer
                                 </button>
                             </div>
