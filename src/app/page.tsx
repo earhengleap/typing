@@ -412,7 +412,8 @@ export default function MonkeyTypePage() {
         mode, config, language, theme, stats, chartData, timeLeft, isActive, isFinished, isWrongKeyboardLayout,
         soundEnabled, showLiveWpm, showLiveAccuracy, fontSize, fontFamily, soundType, soundVolume, soundOnError, playTimeWarning, favoriteThemes,
         setIsActive, setIsFinished, setTimeLeft, setStats, setChartData, resetLiveState, addHistory,
-        setMode, setConfig, setLanguage, setTheme, setIsWrongKeyboardLayout, setSettings, toggleFavoriteTheme
+        setMode, setConfig, setLanguage, setTheme, setIsWrongKeyboardLayout, setSettings, toggleFavoriteTheme,
+        isSearchOpen, setIsSearchOpen, searchQuery, setSearchQuery, selectedIndex, setSelectedIndex, activeCommandGroup, setActiveCommandGroup
     } = useMonkeyTypeStore();
 
     // -- Advance Sound System --
@@ -866,10 +867,6 @@ export default function MonkeyTypePage() {
 
     const activeTheme = THEMES[theme] || THEMES.codex;
 
-    const [isSearchOpen, setIsSearchOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [selectedIndex, setSelectedIndex] = useState(0);
-    const [activeCommandGroup, setActiveCommandGroup] = useState<string | null>(null);
 
     const targetText = useMemo(() => {
         return words.join(" ");
@@ -2469,7 +2466,7 @@ export default function MonkeyTypePage() {
 
             <button
                 onClick={() => setIsSearchOpen(true)}
-                className="fixed lg:hidden bottom-3 sm:bottom-6 left-3 sm:left-6 z-50 p-2.5 sm:p-3 rounded-full shadow-lg transition-transform hover:scale-105 active:scale-95 flex items-center justify-center opacity-80 hover:opacity-100"
+                className="fixed lg:hidden bottom-3 sm:bottom-6 left-3 sm:left-6 z-50 p-2.5 sm:p-3 rounded-full shadow-lg transition-transform hover:scale-105 active:scale-95 flex items-center justify-center opacity-80 hover:opacity-100 cursor-pointer"
                 style={{ backgroundColor: activeTheme.primary, color: activeTheme.bg }}
                 title="Open Command Palette"
             >

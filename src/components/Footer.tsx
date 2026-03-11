@@ -15,7 +15,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 export function Footer() {
-    const themeName = useMonkeyTypeStore((state) => state.theme);
+    const { theme: themeName, setIsSearchOpen } = useMonkeyTypeStore();
     const activeTheme = THEMES[themeName] || THEMES.codex;
 
     const socialLinks = [
@@ -83,11 +83,10 @@ export function Footer() {
 
                     <div className="hidden sm:block w-px h-3 bg-current opacity-30" style={{ color: activeTheme.textDim }} />
 
-                    <Link
-                        href="https://github.com/earhengleap/typing/releases"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 md:gap-2.5 group px-2 py-1 md:px-3 md:py-1.5 rounded-full transition-all duration-300 border border-transparent hover:border-current relative overflow-hidden"
+                    <div
+                        role="button"
+                        onClick={() => setIsSearchOpen(true)}
+                        className="flex items-center gap-2 md:gap-2.5 group px-2 py-1 md:px-3 md:py-1.5 rounded-full transition-all duration-300 border border-transparent hover:border-current relative overflow-hidden cursor-pointer"
                         style={{
                             color: activeTheme.textDim,
                             backgroundColor: `${activeTheme.bgAlt}50`
@@ -103,7 +102,7 @@ export function Footer() {
                             </span>
                         </div>
                         <div className="absolute inset-0 bg-current opacity-0 group-hover:opacity-[0.03] transition-opacity duration-300" />
-                    </Link>
+                    </div>
                 </div>
             </div>
 

@@ -108,6 +108,16 @@ interface MonkeyTypeState {
     // User Data
     userLevel: number;
     setUserLevel: (level: number) => void;
+
+    // UI State (Non-persistent)
+    isSearchOpen: boolean;
+    setIsSearchOpen: (open: boolean) => void;
+    searchQuery: string;
+    setSearchQuery: (query: string) => void;
+    activeCommandGroup: string | null;
+    setActiveCommandGroup: (group: string | null) => void;
+    selectedIndex: number;
+    setSelectedIndex: (index: number) => void;
 }
 
 export const useMonkeyTypeStore = create<MonkeyTypeState>()(
@@ -196,6 +206,15 @@ export const useMonkeyTypeStore = create<MonkeyTypeState>()(
 
             userLevel: 1,
             setUserLevel: (userLevel) => set({ userLevel }),
+
+            isSearchOpen: false,
+            setIsSearchOpen: (isSearchOpen) => set({ isSearchOpen }),
+            searchQuery: "",
+            setSearchQuery: (searchQuery) => set({ searchQuery }),
+            activeCommandGroup: null,
+            setActiveCommandGroup: (activeCommandGroup) => set({ activeCommandGroup }),
+            selectedIndex: 0,
+            setSelectedIndex: (selectedIndex) => set({ selectedIndex }),
         }),
         {
             name: 'monkeytype-storage',
