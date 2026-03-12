@@ -1,6 +1,6 @@
 # TypeFlow 🚀
 
-![TypeFlow Banner](/C:/Users/Hengleap/.gemini/antigravity/brain/8c5d03b6-aed0-4315-a092-0122ca633418/typeflow_mockup_banner_1773304591545.png)
+![TypeFlow Banner](public/github-banner.png)
 
 TypeFlow is a professional-grade typing experience built with Next.js, focusing on speed, security, and world-class support for the Khmer language.
 
