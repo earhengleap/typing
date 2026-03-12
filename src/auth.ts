@@ -16,6 +16,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         strategy: "jwt", // Using JWT allows both Credentials and OAuth to work seamlessly
         maxAge: 30 * 24 * 60 * 60, // 30 days
     },
+    events: {
+        async createUser({ user }) {
+            try {
+                const { cookies } = await import("next/headers");
+                const cookieStore = await cookies();
+                const referrerId = cookieStore.get("typeflow_ref")?.value;
+                
+                if (referrerId && user.id) {
+                    const { processReferral } = await import("@/app/actions/referrals");
+                    await processReferral(user.id, referrerId);
+                }
+            } catch (error) {
+                console.error("[AUTH] Error in createUser event:", error);
+            }
+        },
+    },
     callbacks: {
         async jwt({ token, user, trigger, session }) {
             if (user) {

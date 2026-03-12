@@ -55,6 +55,7 @@ export default function AccountPage() {
     const [achievements, setAchievements] = useState<{ achievementId: string; unlockedAt: string | Date }[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [referralCount, setReferralCount] = useState(0);
+    const [referralHistory, setReferralHistory] = useState<{ id: string; name: string | null; joinedAt: Date | null }[]>([]);
     const [isCopied, setIsCopied] = useState(false);
 
     // Editing state
@@ -94,7 +95,14 @@ export default function AccountPage() {
                 if (res.success && res.count !== undefined) {
                     setReferralCount(res.count);
                 }
-                setIsLoading(false);
+            });
+            import("@/app/actions/referrals").then(({ getReferralHistory }) => {
+                getReferralHistory().then(res => {
+                    if (res.success && res.data) {
+                        setReferralHistory(res.data);
+                    }
+                    setIsLoading(false);
+                });
             });
         }
     }, [session?.user?.id]);
@@ -382,63 +390,90 @@ export default function AccountPage() {
 
                 {/* Invite Friends Section */}
                 {session?.user?.id && (
-                    <section className="flex flex-col md:flex-row gap-6 p-6 rounded-[2rem] border relative overflow-hidden group" style={{ backgroundColor: activeTheme.bgAlt + "15", borderColor: activeTheme.bgAlt }}>
-                        {/* Background flare */}
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-current opacity-5 rounded-full blur-[100px] pointer-events-none" style={{ color: activeTheme.primary }} />
-                        
-                        <div className="flex-1 flex flex-col gap-4 z-10">
-                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest" style={{ color: activeTheme.primary }}>
-                                <Share2 size={16} />
-                                Invite Friends
-                            </div>
-                            <h3 className="text-2xl font-black capitalize tracking-tight" style={{ color: activeTheme.text }}>Type together.</h3>
-                            <p className="text-sm font-medium leading-relaxed max-w-sm opacity-70" style={{ color: activeTheme.textDim }}>
-                                Share your personal invite link. Build the ultimate typing community and see how your friends stack up.
-                            </p>
+                    <div className="flex flex-col gap-8">
+                        <section className="flex flex-col md:flex-row gap-6 p-6 rounded-[2rem] border relative overflow-hidden group" style={{ backgroundColor: activeTheme.bgAlt + "15", borderColor: activeTheme.bgAlt }}>
+                            {/* Background flare */}
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-current opacity-5 rounded-full blur-[100px] pointer-events-none" style={{ color: activeTheme.primary }} />
                             
-                            <div className="flex items-center gap-2 mt-2">
-                                <div className="flex-1 max-w-sm px-4 py-3 rounded-xl text-xs font-mono font-bold truncate border transition-all" style={{ backgroundColor: activeTheme.bgAlt + "40", borderColor: activeTheme.bgAlt, color: activeTheme.text }}>
-                                    {`${process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://keykh.vercel.app')}/login?ref=${session.user.id}`}
+                            <div className="flex-1 flex flex-col gap-4 z-10">
+                                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest" style={{ color: activeTheme.primary }}>
+                                    <Share2 size={16} />
+                                    Invite Friends
                                 </div>
-                                <button 
-                                    onClick={() => {
-                                        const link = `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin || 'https://keykh.vercel.app'}/login?ref=${session.user.id}`;
-                                        navigator.clipboard.writeText(link);
-                                        toast.success("Invite link copied to clipboard!");
-                                        setIsCopied(true);
-                                        setTimeout(() => setIsCopied(false), 2000);
-                                    }}
-                                    className="relative p-3 w-32 rounded-xl border transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2 text-xs font-bold overflow-hidden"
-                                    style={{ backgroundColor: activeTheme.primary, borderColor: "transparent", color: activeTheme.bg }}
-                                >
-                                    {isCopied ? (
-                                        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="flex items-center gap-2 absolute">
-                                            <CheckIcon size={16} />
-                                            Copied!
-                                        </motion.div>
-                                    ) : (
-                                        <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="flex items-center gap-2 absolute">
+                                <h3 className="text-2xl font-black capitalize tracking-tight" style={{ color: activeTheme.text }}>Type together.</h3>
+                                <p className="text-sm font-medium leading-relaxed max-w-sm opacity-70" style={{ color: activeTheme.textDim }}>
+                                    Share your personal invite link. Build the ultimate typing community and see how your friends stack up.
+                                </p>
+                                
+                                <div className="flex items-center gap-2 mt-2">
+                                    <div className="flex-1 max-w-sm px-4 py-3 rounded-xl text-xs font-mono font-bold truncate border transition-all" style={{ backgroundColor: activeTheme.bgAlt + "40", borderColor: activeTheme.bgAlt, color: activeTheme.text }}>
+                                        {`${process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://keykh.vercel.app')}/login?ref=${session.user.id}`}
+                                    </div>
+                                    <button 
+                                        onClick={() => {
+                                            const link = `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin || 'https://keykh.vercel.app'}/login?ref=${session.user.id}`;
+                                            navigator.clipboard.writeText(link);
+                                            toast.success("Invite link copied to clipboard!");
+                                            setIsCopied(true);
+                                            setTimeout(() => setIsCopied(false), 2000);
+                                        }}
+                                        className="relative p-3 w-32 rounded-xl border transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2 text-xs font-bold overflow-hidden"
+                                        style={{ backgroundColor: activeTheme.primary, borderColor: "transparent", color: activeTheme.bg }}
+                                    >
+                                        {isCopied ? (
+                                            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="flex items-center gap-2 absolute">
+                                                <CheckIcon size={16} />
+                                                Copied!
+                                            </motion.div>
+                                        ) : (
+                                            <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="flex items-center gap-2 absolute">
+                                                <Copy size={16} />
+                                                Copy Link
+                                            </motion.div>
+                                        )}
+                                        {/* Invisible spacer to maintain button width */}
+                                        <div className="flex items-center gap-2 opacity-0 pointer-events-none">
                                             <Copy size={16} />
                                             Copy Link
-                                        </motion.div>
-                                    )}
-                                    {/* Invisible spacer to maintain button width */}
-                                    <div className="flex items-center gap-2 opacity-0 pointer-events-none">
-                                        <Copy size={16} />
-                                        Copy Link
-                                    </div>
-                                </button>
+                                        </div>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="shrink-0 flex items-center justify-center p-8 rounded-3xl border z-10" style={{ backgroundColor: activeTheme.bgAlt + "30", borderColor: activeTheme.bgAlt }}>
-                            <div className="flex flex-col items-center gap-2">
-                                <Users size={32} style={{ color: activeTheme.primary }} />
-                                <span className="text-4xl font-black" style={{ color: activeTheme.text }}>{referralCount}</span>
-                                <span className="text-[10px] font-bold uppercase tracking-widest opacity-60" style={{ color: activeTheme.textDim }}>Friends Invited</span>
+                            <div className="shrink-0 flex items-center justify-center p-8 rounded-3xl border z-10" style={{ backgroundColor: activeTheme.bgAlt + "30", borderColor: activeTheme.bgAlt }}>
+                                <div className="flex flex-col items-center gap-2">
+                                    <Users size={32} style={{ color: activeTheme.primary }} />
+                                    <span className="text-4xl font-black" style={{ color: activeTheme.text }}>{referralCount}</span>
+                                    <span className="text-[10px] font-bold uppercase tracking-widest opacity-60" style={{ color: activeTheme.textDim }}>Friends Invited</span>
+                                </div>
                             </div>
-                        </div>
-                    </section>
+                        </section>
+
+                        {/* Referral History List */}
+                        {referralHistory.length > 0 && (
+                            <div className="flex flex-col gap-4">
+                                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-2" style={{ color: activeTheme.textDim }}>
+                                    <Users size={14} className="opacity-50" />
+                                    Your Referrals
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                    {referralHistory.map((ref) => (
+                                        <div key={ref.id} className="p-4 rounded-2xl border flex items-center gap-3" style={{ backgroundColor: activeTheme.bgAlt + "10", borderColor: activeTheme.bgAlt }}>
+                                            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-black" style={{ backgroundColor: activeTheme.bgAlt, color: activeTheme.primary }}>
+                                                {ref.name?.charAt(0).toUpperCase() || "U"}
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-bold" style={{ color: activeTheme.text }}>{ref.name || "Anonymous User"}</span>
+                                                <span className="text-[10px] font-medium opacity-50" style={{ color: activeTheme.textDim }}>
+                                                    Joined {new Date(ref.joinedAt!).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 )}
 
                 {/* Heatmap Section */}

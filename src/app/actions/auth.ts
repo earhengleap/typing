@@ -142,47 +142,12 @@ export async function registerUser(formData: FormData) {
 
         // Handle Referral Invite Rewards
         const refId = formData.get("ref") as string | null;
-        if (refId && newUser?.id) {
-            try {
-                // Verify the referrer exists
-                const [referrerExists] = await db.select().from(users).where(eq(users.id, refId));
-                if (referrerExists && referrerExists.id !== newUser.id) {
-                    // Record the referral
-                    await db.insert(referrals).values({
-                        referrerId: referrerExists.id,
-                        referredId: newUser.id,
-                    });
+        const cookieRefId = (await import("next/headers")).cookies().then(c => c.get("typeflow_ref")?.value);
+        const finalRefId = refId || await cookieRefId;
 
-                    // REFERRED USER REWARDS (+50 XP & Achievement)
-                    await db.update(users).set({ xp: sql`${users.xp} + 50` }).where(eq(users.id, newUser.id));
-                    await db.insert(userAchievements).values({
-                        userId: newUser.id,
-                        achievementId: "a_friends_call"
-                    }).onConflictDoNothing();
-
-                    // REFERRER REWARDS (+10 XP)
-                    await db.update(users).set({ xp: sql`${users.xp} + 10` }).where(eq(users.id, referrerExists.id));
-                    
-                    // Check Referrer Achievements
-                    const results = await db.select().from(referrals).where(eq(referrals.referrerId, referrerExists.id));
-                    const inviteCount = results.length;
-
-                    if (inviteCount >= 1) {
-                        await db.insert(userAchievements).values({
-                            userId: referrerExists.id,
-                            achievementId: "the_recruiter"
-                        }).onConflictDoNothing();
-                    }
-                    if (inviteCount >= 5) {
-                        await db.insert(userAchievements).values({
-                            userId: referrerExists.id,
-                            achievementId: "community_builder"
-                        }).onConflictDoNothing();
-                    }
-                }
-            } catch (err) {
-                console.error("[AUTH] Failed to process referral rewards:", err);
-            }
+        if (finalRefId && newUser?.id) {
+            const { processReferral } = await import("@/app/actions/referrals");
+            await processReferral(newUser.id, finalRefId);
         }
 
         // Send Welcome Email in background

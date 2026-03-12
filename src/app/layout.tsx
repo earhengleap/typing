@@ -3,6 +3,8 @@ import { JetBrains_Mono, Hanuman } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "next-auth/react";
 import { Analytics } from "@vercel/analytics/next"
+import { ReferralTracker } from "@/components/ReferralTracker";
+import { Suspense } from "react";
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
@@ -50,6 +52,9 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <SessionProvider refetchOnWindowFocus={false}>
+          <Suspense fallback={null}>
+            <ReferralTracker />
+          </Suspense>
           {children}
         </SessionProvider>
       </body>
