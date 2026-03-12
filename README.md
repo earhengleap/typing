@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TypeFlow 🚀
 
-## Getting Started
+![TypeFlow Banner](/C:/Users/Hengleap/.gemini/antigravity/brain/8c5d03b6-aed0-4315-a092-0122ca633418/typeflow_mockup_banner_1773304591545.png)
 
-First, run the development server:
+TypeFlow is a professional-grade typing experience built with Next.js, focusing on speed, security, and world-class support for the Khmer language.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## ✨ Key Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **⚡ High Performance**: Ultra-fast typing experience with zero latency and batched server-side data fetching.
+- **🛡️ Anti-Cheat Security**: Multi-layered protection using event trust validation, consistency entropy analysis, and realistic WPM thresholds.
+- **🇰🇭 Elite Khmer Support**: 100% accurate grapheme cluster rendering, caret positioning, and a curated pool of 100+ native words.
+- **📊 Real-time Analytics**: Live WPM, accuracy, and consistency tracking with interactive performance charts.
+- **🏆 Global Leaderboards**: Categorized rankings (Daily, Weekly, All-Time) with unverified score filtering.
+- **🤝 Social Features**: Built-in referral system with unique invite links and achievement tracking.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🛠️ Tech Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Framework**: [Next.js 14](https://nextjs.org/) (App Router)
+- **Database**: [PostgreSQL](https://www.postgresql.org/) with [Drizzle ORM](https://orm.drizzle.team/)
+- **Auth**: [NextAuth.js](https://next-auth.js.org/)
+- **Styling**: Vanilla CSS & TailwindCSS (hybrid)
+- **Animations**: [Framer Motion](https://www.framer.com/motion/)
+- **Store**: [Zustand](https://zustand-demo.pmnd.rs/)
 
-## Learn More
+## 🚀 Getting Started
 
-To learn more about Next.js, take a look at the following resources:
+### Prerequisites
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- [Node.js](https://nodejs.org/) (v18+)
+- [Bun](https://bun.sh/) or [npm](https://www.npmjs.com/)
+- [PostgreSQL](https://www.postgresql.org/)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Installation
 
-## Deploy on Vercel
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/earhengleap/typeflow.git
+   cd typeflow
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+2. Install dependencies:
+   ```bash
+   bun install
+   # or
+   npm install
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+3. Set up environment variables:
+   Create a `.env` file in the root directory:
+   ```env
+   DATABASE_URL=your_postgresql_url
+   NEXTAUTH_SECRET=your_nextauth_secret
+   NEXTAUTH_URL=http://localhost:3000
+   ```
+
+4. Push the schema:
+   ```bash
+   bunx drizzle-kit push
+   ```
+
+5. Run the development server:
+   ```bash
+   bun dev
+   # or
+   npm run dev
+   ```
+
+## 🔒 Security
+
+We take platform integrity seriously. Our security engine monitors for:
+- Programmatic input (Bots)
+- Paste injection
+- Impossible typing patterns
+- Perfectly consistent rhythms
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
