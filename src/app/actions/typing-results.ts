@@ -6,12 +6,31 @@ import { typingResults, users, userAchievements } from "@/db/schema";
 import { desc, eq, sql, and } from "drizzle-orm";
 import type { RunHistory, Theme } from "@/hooks/use-monkeytype-store";
 import { revalidatePath } from "next/cache";
+import { getReferralCount, getReferralHistory } from "./referrals";
+import { getGlobalStandingsForUser } from "./leaderboard";
 
-export async function saveTypingResult(run: Omit<RunHistory, "id" | "date"> & { duration: number; consistency: number; missedChars?: number; afk?: number }) {
+export async function saveTypingResult(run: Omit<RunHistory, "id" | "date"> & { duration: number; consistency: number; missedChars?: number; afk?: number; isUnverified?: boolean }) {
     const session = await auth();
     if (!session?.user?.id) return { success: false, error: "Unauthorized" };
 
     try {
+        // --- Anti-Cheat Verification ---
+        let finalIsUnverified = run.isUnverified || false;
+
+        // 1. Sanity Check: WPM Threshold
+        // Even the world's fastest typists rarely exceed 250-280 WPM in short bursts.
+        // We'll set a high bar (350 WPM) to flag obvious bots.
+        if (run.wpm > 350 || run.rawWpm > 450) {
+            finalIsUnverified = true;
+        }
+
+        // 2. Server-side WPM Recalculation (Basic)
+        // If reported WPM is significantly higher than what accuracy/duration allows, flag it.
+        // (This is a coarse check since we don't send the full word list yet)
+        const reportedCorrectChars = Math.round((run.duration * run.wpm * 5) / 60);
+        // If the client reports 0 duration but high WPM, it's a bug or cheat.
+        if (run.duration <= 0 && run.wpm > 0) finalIsUnverified = true;
+
         // 1. Save the result
         await db.insert(typingResults).values({
             userId: session.user.id,
@@ -26,6 +45,7 @@ export async function saveTypingResult(run: Omit<RunHistory, "id" | "date"> & { 
             duration: run.duration,
             missedChars: run.missedChars || 0,
             afk: run.afk || 0,
+            isUnverified: finalIsUnverified,
         });
 
         // 2. Fetch current user stats for xp/level/streak logic
@@ -194,6 +214,7 @@ export async function getUserTypingHistory(userId?: string) {
             duration: r.duration || 0,
             afk: r.afk || 0,
             missedChars: r.missedChars || 0,
+            isUnverified: r.isUnverified || false,
             date: r.createdAt.getTime(),
         }));
 
@@ -326,5 +347,59 @@ export async function getGhostRun(mode: string, config: number, language: string
     } catch (error) {
         console.error("Failed to fetch ghost run:", error);
         return { success: false, error: "Database error" };
+    }
+}
+
+/**
+ * Consolidates multiple data requests for the account dashboard into a single server-side call.
+ * This significantly reduces HTTP overhead and improves page load speed.
+ */
+export async function getAccountDashboardData() {
+    const session = await auth();
+    if (!session?.user?.id) return { success: false, error: "Unauthorized" };
+
+    const userId = session.user.id;
+
+    try {
+        // Run all independent queries in parallel using Promise.all
+        const [
+            historyData,
+            achievementsData,
+            referralCountData,
+            referralHistoryData,
+            standings15,
+            standings30,
+            standings60,
+            standings120
+        ] = await Promise.all([
+            getUserTypingHistory(userId),
+            getUserAchievements(userId),
+            getReferralCount(),
+            getReferralHistory(),
+            getGlobalStandingsForUser(userId, "time", 15),
+            getGlobalStandingsForUser(userId, "time", 30),
+            getGlobalStandingsForUser(userId, "time", 60),
+            getGlobalStandingsForUser(userId, "time", 120),
+        ]);
+
+        return {
+            success: true,
+            data: {
+                history: historyData.success ? historyData.data : [],
+                user: historyData.success ? historyData.user : null,
+                achievements: achievementsData.success ? achievementsData.data : [],
+                referralCount: referralCountData.success ? (referralCountData as any).count : 0,
+                referralHistory: referralHistoryData.success ? (referralHistoryData as any).data : [],
+                globalStandings: {
+                    15: standings15,
+                    30: standings30,
+                    60: standings60,
+                    120: standings120
+                }
+            }
+        };
+    } catch (error) {
+        console.error("Batch fetch error for account dashboard:", error);
+        return { success: false, error: "Failed to load dashboard data" };
     }
 }

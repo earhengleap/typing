@@ -7,9 +7,7 @@ import { useMonkeyTypeStore, RunHistory } from "@/hooks/use-monkeytype-store";
 import { Header } from "@/components/Header";
 import { motion } from "framer-motion";
 import { useEffect, useState, useMemo } from "react";
-import { getUserTypingHistory, updateAccount, getUserAchievements } from "@/app/actions/typing-results";
-import { getReferralCount } from "@/app/actions/referrals";
-import { getGlobalStandingsForUser } from "@/app/actions/leaderboard";
+import { getAccountDashboardData, updateAccount } from "@/app/actions/typing-results";
 import { ACHIEVEMENTS, Achievement } from "@/constants/achievements";
 import { toast } from "sonner";
 import {
@@ -80,38 +78,23 @@ export default function AccountPage() {
 
     useEffect(() => {
         if (session?.user?.id) {
-            getUserTypingHistory(session.user.id).then((res) => {
-                if (res.success) {
-                    setHistory(res.data || []);
-                    setUserData(res.user || null);
-                    setBioValue(res.user?.bio || "");
-                    setKeyboardValue(res.user?.keyboard || "");
-                }
-            });
-            getUserAchievements(session.user.id).then((res) => {
-                if (res.success) {
-                    setAchievements(res.data || []);
-                }
-            });
-            getReferralCount().then(res => {
-                if (res.success && res.count !== undefined) {
-                    setReferralCount(res.count);
-                }
-            });
-            import("@/app/actions/referrals").then(({ getReferralHistory }) => {
-                getReferralHistory().then(res => {
-                    if (res.success && res.data) {
-                        setReferralHistory(res.data);
-                    }
+            getAccountDashboardData().then((res) => {
+                if (res.success && res.data) {
+                    const { history, user, achievements, referralCount, referralHistory, globalStandings } = res.data;
+                    
+                    setHistory(history || []);
+                    setUserData(user || null);
+                    setBioValue(user?.bio || "");
+                    setKeyboardValue(user?.keyboard || "");
+                    setAchievements(achievements || []);
+                    setReferralCount(referralCount || 0);
+                    setReferralHistory(referralHistory || []);
+                    setGlobalStandings(globalStandings || {});
                     setIsLoading(false);
-                });
-            });
-
-            // Fetch Global Standings for various time configs
-            [15, 30, 60, 120].forEach(config => {
-                getGlobalStandingsForUser(session.user.id, "time", config).then(res => {
-                    setGlobalStandings(prev => ({ ...prev, [config]: res }));
-                });
+                } else {
+                    toast.error("Failed to load dashboard data");
+                    setIsLoading(false);
+                }
             });
         }
     }, [session?.user?.id]);

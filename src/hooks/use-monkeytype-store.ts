@@ -51,6 +51,7 @@ export interface RunHistory {
     date: number;
     missedChars?: number;
     afk?: number;
+    isUnverified?: boolean;
 }
 
 interface MonkeyTypeState {

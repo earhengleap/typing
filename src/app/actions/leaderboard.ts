@@ -33,6 +33,7 @@ export async function getTopLeaderboard(
             eq(typingResults.mode, gameMode),
             eq(typingResults.config, Number(config)),
             eq(typingResults.language, language),
+            eq(typingResults.isUnverified, false),
         ];
 
         if (dateFilter) {
@@ -103,7 +104,8 @@ export async function getGlobalStandingsForUser(userId: string, gameMode: string
                 and(
                     eq(typingResults.userId, userId),
                     eq(typingResults.mode, gameMode),
-                    eq(typingResults.config, config)
+                    eq(typingResults.config, config),
+                    eq(typingResults.isUnverified, false)
                 )
             )
             .orderBy(desc(typingResults.wpm))
@@ -127,6 +129,7 @@ export async function getGlobalStandingsForUser(userId: string, gameMode: string
                 and(
                     eq(typingResults.mode, gameMode),
                     eq(typingResults.config, config),
+                    eq(typingResults.isUnverified, false),
                     sql`${typingResults.wpm} > ${bestWpm}`
                 )
             );
