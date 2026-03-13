@@ -27,6 +27,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     const { processReferral } = await import("@/app/actions/referrals");
                     await processReferral(user.id, referrerId);
                 }
+
+                // Send welcome notification
+                if (user.id) {
+                    await db.insert(notifications).values({
+                        userId: user.id,
+                        type: "notification",
+                        title: "Welcome to TypeFlow! 🚀",
+                        message: "We're glad to have you here. Start a typing test to see your progress and unlock achievements!",
+                        priority: "info",
+                    });
+                }
             } catch (error) {
                 console.error("[AUTH] Error in createUser event:", error);
             }

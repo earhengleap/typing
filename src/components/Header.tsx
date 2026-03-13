@@ -7,6 +7,7 @@ import { UserMenu } from "@/components/UserMenu";
 import { NotificationsPanel } from "@/components/NotificationsPanel";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { signIn, useSession } from "next-auth/react";
 import { THEMES } from "@/constants/themes";
 import { getNotifications } from "@/app/actions/notifications";
 
@@ -15,15 +16,17 @@ interface HeaderProps {
 }
 
 export function Header({ activeTheme }: HeaderProps) {
+    const { status } = useSession();
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
     const [hasUnread, setHasUnread] = useState(false);
 
+    const checkUnread = async () => {
+        const res = await getNotifications();
+        const totalUnread = [...res.inbox, ...res.announcements, ...res.notifications].some(n => n.read === 0);
+        setHasUnread(totalUnread);
+    };
+
     useEffect(() => {
-        const checkUnread = async () => {
-            const res = await getNotifications();
-            const totalUnread = [...res.inbox, ...res.announcements, ...res.notifications].some(n => n.read === 0);
-            setHasUnread(totalUnread);
-        };
         checkUnread();
         
         // Refresh every 30 seconds for "real-time" feel
@@ -108,7 +111,13 @@ export function Header({ activeTheme }: HeaderProps) {
                         <motion.button
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.95 }}
-                            onClick={() => setIsNotificationsOpen(true)}
+                            onClick={() => {
+                                if (status === "unauthenticated") {
+                                    signIn();
+                                } else {
+                                    setIsNotificationsOpen(true);
+                                }
+                            }}
                             className="p-1.5 sm:p-2 rounded-xl transition-all hover:bg-white/5 group relative cursor-pointer"
                             type="button"
                             title="Notifications"
@@ -128,10 +137,8 @@ export function Header({ activeTheme }: HeaderProps) {
                 </div>
                 <NotificationsPanel 
                     isOpen={isNotificationsOpen} 
-                    onClose={() => {
-                        setIsNotificationsOpen(false);
-                        setHasUnread(false);
-                    }} 
+                    onClose={() => setIsNotificationsOpen(false)} 
+                    onUpdate={checkUnread}
                     activeTheme={activeTheme} 
                 />
             </header>

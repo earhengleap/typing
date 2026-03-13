@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RotateCcw, Timer, Keyboard as KeyboardIcon, Type, Globe, Zap, MousePointer2, Lock, Search, Music, Volume2, VolumeX, Bell, Check, Palette, Star, Terminal } from "lucide-react";
+import Link from "next/link";
+import { RotateCcw, Timer, Keyboard as KeyboardIcon, Type, Globe, Zap, MousePointer2, Lock, Search, Music, Volume2, VolumeX, Bell, Check, Palette, Star, Terminal, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMonkeyTypeStore, GameMode, GameConfig, Language, Theme, ChartPoint } from "@/hooks/use-monkeytype-store";
 import { THEMES } from "@/constants/themes";
@@ -2456,23 +2457,41 @@ export default function MonkeyTypePage() {
                                 />
                             </div>
 
-                            <motion.button
-                                ref={restartRef}
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => resetTest()}
-                                className="group flex items-center gap-0 hover:gap-3 focus-visible:gap-3 px-6 py-4 rounded-full transition-all duration-300 focus:outline-none cursor-pointer"
-                                style={{ color: activeTheme.textDim }}
-                                onMouseEnter={(e) => { e.currentTarget.style.color = activeTheme.text; e.currentTarget.style.backgroundColor = activeTheme.bgAlt; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.color = activeTheme.textDim; e.currentTarget.style.backgroundColor = 'transparent'; }}
-                                onFocus={(e) => { e.currentTarget.style.color = activeTheme.text; e.currentTarget.style.backgroundColor = activeTheme.bgAlt; }}
-                                onBlur={(e) => { e.currentTarget.style.color = activeTheme.textDim; e.currentTarget.style.backgroundColor = 'transparent'; }}
-                            >
-                                <RotateCcw className="w-5 h-5 transition-transform duration-500 group-hover:rotate-180 group-focus-visible:rotate-180" />
-                                <span className="text-xs font-bold uppercase tracking-widest overflow-hidden whitespace-nowrap w-0 group-hover:w-24 group-focus-visible:w-24 transition-all duration-300 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100">
-                                    restart test
-                                </span>
-                            </motion.button>
+                            <div className="flex items-center gap-4">
+                                <Link href="/leaderboards">
+                                    <motion.button
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        className="group flex items-center gap-3 px-6 py-4 rounded-full transition-all duration-300 focus:outline-none cursor-pointer"
+                                        style={{ color: activeTheme.textDim }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.color = activeTheme.text; e.currentTarget.style.backgroundColor = `${activeTheme.bgAlt}50`; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.color = activeTheme.textDim; e.currentTarget.style.backgroundColor = 'transparent'; }}
+                                    >
+                                        <Crown className="w-5 h-5 transition-transform duration-300 group-hover:scale-110" />
+                                        <span className="text-xs font-bold uppercase tracking-widest">
+                                            leaderboard
+                                        </span>
+                                    </motion.button>
+                                </Link>
+
+                                <motion.button
+                                    ref={restartRef}
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => resetTest()}
+                                    className="group flex items-center gap-0 hover:gap-3 focus-visible:gap-3 px-6 py-4 rounded-full transition-all duration-300 focus:outline-none cursor-pointer"
+                                    style={{ color: activeTheme.textDim }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.color = activeTheme.text; e.currentTarget.style.backgroundColor = activeTheme.bgAlt; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.color = activeTheme.textDim; e.currentTarget.style.backgroundColor = 'transparent'; }}
+                                    onFocus={(e) => { e.currentTarget.style.color = activeTheme.text; e.currentTarget.style.backgroundColor = activeTheme.bgAlt; }}
+                                    onBlur={(e) => { e.currentTarget.style.color = activeTheme.textDim; e.currentTarget.style.backgroundColor = 'transparent'; }}
+                                >
+                                    <RotateCcw className="w-5 h-5 transition-transform duration-500 group-hover:rotate-180 group-focus-visible:rotate-180" />
+                                    <span className="text-xs font-bold uppercase tracking-widest overflow-hidden whitespace-nowrap w-0 group-hover:w-24 group-focus-visible:w-24 transition-all duration-300 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100">
+                                        restart test
+                                    </span>
+                                </motion.button>
+                            </div>
                         </div>
                     </motion.div>
                 )}

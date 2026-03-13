@@ -138,6 +138,26 @@ export const notifications = pgTable("notification", {
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
 });
 
+// Track read/dismissed state for global announcements per user
+export const userNotificationStates = pgTable("user_notification_state", {
+    id: text("id")
+        .primaryKey()
+        .$defaultFn(() => crypto.randomUUID()),
+    notificationId: text("notification_id")
+        .notNull()
+        .references(() => notifications.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+        .notNull()
+        .references(() => users.id, { onDelete: "cascade" }),
+    read: integer("read").default(0).notNull(), // 0 = unread, 1 = read
+    dismissed: integer("dismissed").default(0).notNull(), // 0 = visible, 1 = hidden
+    updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+}, (table) => {
+    return {
+        userNotifIdx: index("user_notif_idx").on(table.userId, table.notificationId),
+    };
+});
+
 // Invite Links / Referral Tracking
 export const referrals = pgTable("referral", {
     id: text("id")
