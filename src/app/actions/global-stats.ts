@@ -70,3 +70,35 @@ export async function getActivityGraph() {
         return new Array(30).fill(0);
     }
 }
+
+export async function getWpmDistribution() {
+    try {
+        // Query WPM distribution in buckets of 10
+        // We'll bucket up to 200 WPM, everything above goes into 200+
+        const result = await db.select({
+            bucket: sql<number>`floor(${typingResults.wpm} / 10) * 10`,
+            count: sql<number>`count(*)`
+        })
+        .from(typingResults)
+        .groupBy(sql`floor(${typingResults.wpm} / 10) * 10`)
+        .orderBy(sql`floor(${typingResults.wpm} / 10) * 10`);
+
+        // Initialize buckets from 0 to 200 (Total 21 buckets: 0, 10, ..., 200)
+        const distribution = new Array(21).fill(0);
+        let total = 0;
+
+        result.forEach((row: any) => {
+            const bucketIndex = Math.min(Math.floor(Number(row.bucket) / 10), 20);
+            distribution[bucketIndex] += Number(row.count);
+            total += Number(row.count);
+        });
+
+        return {
+            distribution,
+            total
+        };
+    } catch (e) {
+        console.error("Error fetching Wpm distribution:", e);
+        return { distribution: new Array(21).fill(0), total: 0 };
+    }
+}

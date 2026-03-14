@@ -8,12 +8,12 @@ import { useMonkeyTypeStore } from "@/hooks/use-monkeytype-store";
 import { THEMES } from "@/constants/themes";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { HandHeart } from "lucide-react";
+import { HandHeart, AlignLeft as AlignLeftIcon, Keyboard as KeyboardIcon, BarChart3 as ChartBarIcon } from "lucide-react";
 import { AuthenticMail } from "@/components/icons/AuthenticMail";
 import { AuthenticGithub } from "@/components/icons/AuthenticGithub";
 import { AuthenticDiscord } from "@/components/icons/AuthenticDiscord";
 import { AuthenticSupport } from "@/components/icons/AuthenticSupport";
-import { getGlobalStats, getActivityGraph } from "@/app/actions/global-stats";
+import { getGlobalStats, getActivityGraph, getWpmDistribution } from "@/app/actions/global-stats";
 
 export default function AboutPage() {
     const themeName = useMonkeyTypeStore((state) => state.theme);
@@ -22,13 +22,19 @@ export default function AboutPage() {
     const [mounted, setMounted] = useState(false);
     const [globalStats, setGlobalStats] = useState({ testsStarted: 0, testsCompleted: 0, typingTime: 0 });
     const [graphData, setGraphData] = useState<number[]>([]);
+    const [wpmData, setWpmData] = useState<{ distribution: number[], total: number }>({ distribution: [], total: 0 });
     const [statsLoaded, setStatsLoaded] = useState(false);
 
     useEffect(() => {
         setMounted(true);
-        Promise.all([getGlobalStats(), getActivityGraph()]).then(([stats, graph]) => {
+        Promise.all([
+            getGlobalStats(), 
+            getActivityGraph(),
+            getWpmDistribution()
+        ]).then(([stats, graph, wpm]) => {
             setGlobalStats(stats);
             setGraphData(graph);
+            setWpmData(wpm);
             setStatsLoaded(true);
         });
     }, []);
@@ -37,109 +43,161 @@ export default function AboutPage() {
 
     return (
         <div
-            className="min-h-screen flex flex-col font-mono selection:bg-white/20 transition-colors duration-500 pt-1 sm:pt-1.5 md:pt-3 px-[var(--content-px)]"
+            className="min-h-screen flex flex-col font-roboto selection:bg-[var(--mt-primary-20)] transition-colors duration-500 pt-1 sm:pt-1.5 md:pt-3 px-[var(--content-px)]"
             style={{ backgroundColor: activeTheme.bg, color: activeTheme.text }}
         >
             <Header activeTheme={activeTheme} />
 
-            <main className="flex-1 w-full mx-auto flex flex-col py-8 overflow-y-auto overflow-x-hidden">
+            <main className="flex-1 w-full max-w-[1050px] mx-auto flex flex-col py-10 overflow-y-auto overflow-x-hidden">
                 <motion.div
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, ease: "easeOut" }}
-                    className="max-w-[800px] flex flex-col gap-10 sm:gap-14 leading-relaxed"
+                    className="flex flex-col gap-20 leading-relaxed pb-20"
                 >
-                    {/* ABOUT */}
-                    <section className="flex flex-col gap-3">
-                        <div className="flex items-center gap-3">
-                            <AuthenticInfo className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: activeTheme.primary }} />
-                            <h2 className="text-xl sm:text-2xl font-black" style={{ color: activeTheme.textDim }}>about</h2>
-                        </div>
-                        <p className="text-sm sm:text-base opacity-80">
-                            <span style={{ color: activeTheme.text }}>type</span>flow is a minimalistic, customizable typing website. Test yourself in various modes, track your progress and improve your speed.
-                        </p>
-                    </section>
+                    {/* TRIBUTE HEADER */}
+                    <div className="flex flex-col gap-1">
+                        <p className="text-sm opacity-50" style={{ color: activeTheme.textDim }}>Created with love by Hengleap. Launched on 08th of March 2026.</p>
+                    </div>
 
-                    {/* BUG REPORT OR FEATURE REQUEST */}
-                    <section className="flex flex-col gap-3">
-                        <div className="flex items-center gap-3">
-                            <BugIcon className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: activeTheme.primary }} />
-                            <h2 className="text-xl sm:text-2xl font-black" style={{ color: activeTheme.textDim }}>bug report or feature request</h2>
+                    {/* TOP STATS */}
+                    <section className="flex flex-col gap-10">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                            <StatCard 
+                                label="tests started" 
+                                value={globalStats.testsStarted} 
+                                theme={activeTheme} 
+                                loaded={statsLoaded} 
+                            />
+                            <StatCard 
+                                label="tests completed" 
+                                value={globalStats.testsCompleted} 
+                                theme={activeTheme} 
+                                loaded={statsLoaded} 
+                            />
+                            <StatCard 
+                                label="typing time" 
+                                value={globalStats.typingTime} 
+                                theme={activeTheme} 
+                                loaded={statsLoaded} 
+                                isTime 
+                            />
                         </div>
-                        <p className="text-sm sm:text-base opacity-80">
-                            If you encounter a bug, or have a feature request - join the Discord server, send me an email, or create an issue on GitHub.
-                        </p>
-                        <div className="flex flex-wrap gap-4 mt-1">
-                            <ExternLink href="https://discord.gg/typeflow" icon={AuthenticDiscord} label="Discord" theme={activeTheme} />
-                            <ExternLink href="mailto:support@typeflow.com" icon={AuthenticMail} label="Email" theme={activeTheme} />
-                            <ExternLink href="https://github.com/earhengleap/typing/issues" icon={AuthenticGithub} label="GitHub" theme={activeTheme} />
-                        </div>
-                    </section>
 
-                    {/* SUPPORT */}
-                    <section className="flex flex-col gap-3">
-                        <div className="flex items-center gap-3">
-                            <AuthenticSupport className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: activeTheme.primary }} />
-                            <h2 className="text-xl sm:text-2xl font-black" style={{ color: activeTheme.textDim }}>support</h2>
-                        </div>
-                        <p className="text-sm sm:text-base opacity-80">
-                            If you enjoy this project and would like to support its continued development, please consider donating.
-                        </p>
-                        <div className="flex flex-wrap gap-4 mt-1">
-                            <ExternLink href="https://ko-fi.com/" icon={HandHeart} label="Donate" theme={activeTheme} />
-                        </div>
-                    </section>
-
-                    {/* STATS */}
-                    <section className="flex flex-col gap-3">
-                        <div className="flex items-center gap-3">
-                            <ChartBarIcon className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: activeTheme.primary }} />
-                            <h2 className="text-xl sm:text-2xl font-black" style={{ color: activeTheme.textDim }}>stats</h2>
-                        </div>
-                        
-                        <div className="flex flex-col md:flex-row gap-6 md:gap-12 mt-2">
-                            <div className="flex flex-col gap-0.5" style={{ opacity: statsLoaded ? 1 : 0.5 }}>
-                                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest opacity-50" style={{ color: activeTheme.textDim }}>tests started</span>
-                                <span className="text-2xl sm:text-3xl font-black" style={{ color: activeTheme.text }}>
-                                    {statsLoaded ? globalStats.testsStarted.toLocaleString() : "..."}
-                                </span>
-                            </div>
-                            <div className="flex flex-col gap-0.5" style={{ opacity: statsLoaded ? 1 : 0.5 }}>
-                                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest opacity-50" style={{ color: activeTheme.textDim }}>tests completed</span>
-                                <span className="text-2xl sm:text-3xl font-black" style={{ color: activeTheme.text }}>
-                                    {statsLoaded ? globalStats.testsCompleted.toLocaleString() : "..."}
-                                </span>
-                            </div>
-                            <div className="flex flex-col gap-0.5" style={{ opacity: statsLoaded ? 1 : 0.5 }}>
-                                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest opacity-50" style={{ color: activeTheme.textDim }}>typing time</span>
-                                <span className="text-2xl sm:text-3xl font-black" style={{ color: activeTheme.text }}>
-                                    {statsLoaded ? formatTypingTime(globalStats.typingTime) : "..."}
-                                </span>
+                        {/* WPM DISTRIBUTION GRAPH */}
+                        <div className="flex flex-col gap-4 mt-4">
+                            <p className="text-xs opacity-50" style={{ color: activeTheme.textDim }}>
+                                {(wpmData.total / 1000).toFixed(1)} thousand total results
+                            </p>
+                            <div className="h-[250px] w-full flex items-end gap-[2px]">
+                                {statsLoaded ? (
+                                    wpmData.distribution.map((count, i) => {
+                                        const maxCount = Math.max(...wpmData.distribution, 1);
+                                        const height = (count / maxCount) * 100;
+                                        return (
+                                            <div key={i} className="flex-1 flex flex-col items-center group h-full justify-end">
+                                                <motion.div
+                                                    initial={{ height: 0 }}
+                                                    animate={{ height: `${height}%` }}
+                                                    transition={{ duration: 0.8, delay: i * 0.02 }}
+                                                    className="w-full relative rounded-t-[2px]"
+                                                    style={{ backgroundColor: activeTheme.primary }}
+                                                >
+                                                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 rounded text-[10px] bg-black text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                                        {count} results
+                                                    </div>
+                                                </motion.div>
+                                                <div className="text-[9px] opacity-30 mt-4 whitespace-nowrap rotate-45 origin-left" style={{ color: activeTheme.textDim }}>
+                                                    {i * 10}
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <div className="w-full h-full animate-pulse bg-white/5 rounded-xl" />
+                                )}
                             </div>
                         </div>
-
-                        <div className="flex flex-col mt-6 bg-black/5 rounded-xl p-4 sm:p-6" style={{ backgroundColor: `${activeTheme.textDim}08` }}>
-                            <span className="text-xs font-bold uppercase tracking-widest mb-4 opacity-50" style={{ color: activeTheme.textDim }}>Activity (Last 30 Days)</span>
-                            {statsLoaded ? (
-                                <GlobalActivityGraph theme={activeTheme} data={graphData} />
-                            ) : (
-                                <div className="h-32 sm:h-40 w-full animate-pulse rounded opacity-20" style={{ backgroundColor: activeTheme.textDim }} />
-                            )}
-                        </div>
                     </section>
 
-                    {/* SHORTCUTS */}
-                    <section className="flex flex-col gap-4">
-                        <div className="flex items-center gap-3">
-                            <KeyboardShortcutIcon className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: activeTheme.primary }} />
-                            <h2 className="text-xl sm:text-2xl font-black" style={{ color: activeTheme.textDim }}>shortcuts</h2>
-                        </div>
-                        <div className="flex flex-col gap-3">
-                            <ShortcutRow keys={["tab"]} plus={["enter"]} desc="restart test" theme={activeTheme} />
-                            <ShortcutRow keys={["esc"]} desc="command line" theme={activeTheme} />
-                            <ShortcutRow keys={["ctrl", "shift", "p"]} desc="command line" theme={activeTheme} />
-                        </div>
-                    </section>
+                    {/* ABOUT CONTENT */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-20 gap-y-16">
+                        {/* about */}
+                        <section className="flex flex-col gap-4">
+                            <div className="flex items-center gap-3">
+                                <AuthenticInfo className="w-5 h-5" style={{ color: activeTheme.primary }} />
+                                <h2 className="text-2xl font-bold" style={{ color: activeTheme.textDim }}>about</h2>
+                            </div>
+                            <p className="text-base opacity-80" style={{ color: activeTheme.text }}>
+                                Monkeytype is a minimalistic, customizable typing website, providing each user with a highly adjustable and pleasant experience.
+                            </p>
+                        </section>
+
+                        {/* word set */}
+                        <section className="flex flex-col gap-4">
+                            <div className="flex items-center gap-3">
+                                <AlignLeftIcon className="w-5 h-5" style={{ color: activeTheme.primary }} />
+                                <h2 className="text-2xl font-bold" style={{ color: activeTheme.textDim }}>word set</h2>
+                            </div>
+                            <p className="text-base opacity-80" style={{ color: activeTheme.text }}>
+                                By default, this website uses the most common 200 English words. You can change this in the settings or the navigation bar to use expanded word sets, or even other languages.
+                            </p>
+                        </section>
+
+                        {/* keybinds */}
+                        <section className="flex flex-col gap-4">
+                            <div className="flex items-center gap-3">
+                                <KeyboardIcon className="w-5 h-5" style={{ color: activeTheme.primary }} />
+                                <h2 className="text-2xl font-bold" style={{ color: activeTheme.textDim }}>keybinds</h2>
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <ShortcutRow keys={["tab"]} plus={["enter"]} desc="restart test" theme={activeTheme} />
+                                <ShortcutRow keys={["esc"]} desc="command line" theme={activeTheme} />
+                                <ShortcutRow keys={["ctrl", "shift", "p"]} desc="command line" theme={activeTheme} />
+                            </div>
+                        </section>
+
+                        {/* results screen */}
+                        <section className="flex flex-col gap-4">
+                            <div className="flex items-center gap-3">
+                                <ChartBarIcon className="w-5 h-5" style={{ color: activeTheme.primary }} />
+                                <h2 className="text-2xl font-bold" style={{ color: activeTheme.textDim }}>results screen</h2>
+                            </div>
+                            <p className="text-base opacity-80" style={{ color: activeTheme.text }}>
+                                After completing a test, you are presented with a lot of data, including WPM, accuracy, consistency, and a chart showing your performance during the test.
+                            </p>
+                        </section>
+
+                        {/* support */}
+                        <section className="flex flex-col gap-4">
+                            <div className="flex items-center gap-3">
+                                <AuthenticSupport className="w-5 h-5" style={{ color: activeTheme.primary }} />
+                                <h2 className="text-2xl font-bold" style={{ color: activeTheme.textDim }}>support</h2>
+                            </div>
+                            <p className="text-base opacity-80" style={{ color: activeTheme.text }}>
+                                If you enjoy this project and would like to support its continued development, please consider donating.
+                            </p>
+                            <div className="flex flex-wrap gap-4 mt-2">
+                                <ExternLink href="https://ko-fi.com/" icon={HandHeart} label="Donate" theme={activeTheme} />
+                            </div>
+                        </section>
+
+                        {/* contact */}
+                        <section className="flex flex-col gap-4">
+                            <div className="flex items-center gap-3">
+                                <AuthenticMail className="w-5 h-5" style={{ color: activeTheme.primary }} />
+                                <h2 className="text-2xl font-bold" style={{ color: activeTheme.textDim }}>contact</h2>
+                            </div>
+                            <p className="text-base opacity-80" style={{ color: activeTheme.text }}>
+                                If you encounter a bug, or have a feature request - join the Discord server, send me an email, or create an issue on GitHub.
+                            </p>
+                            <div className="flex flex-wrap gap-4 mt-2">
+                                <ExternLink href="https://discord.gg/typeflow" icon={AuthenticDiscord} label="Discord" theme={activeTheme} />
+                                <ExternLink href="mailto:support@typeflow.com" icon={AuthenticMail} label="Email" theme={activeTheme} />
+                                <ExternLink href="https://github.com/earhengleap/typing/issues" icon={AuthenticGithub} label="GitHub" theme={activeTheme} />
+                            </div>
+                        </section>
+                    </div>
                 </motion.div>
             </main>
 
@@ -151,6 +209,61 @@ export default function AboutPage() {
 // -------------------------------------------------------------
 // Sub-components
 // -------------------------------------------------------------
+
+function StatCard({ label, value, theme, loaded, isTime = false }: { 
+    label: string, 
+    value: number, 
+    theme: any, 
+    loaded: boolean,
+    isTime?: boolean
+}) {
+    let displayValue = "0.00";
+    let unit = "million";
+
+    if (loaded) {
+        if (isTime) {
+            // Typing time in days
+            const days = value / (3600 * 24);
+            if (days >= 1000000) {
+                displayValue = (days / 1000000).toFixed(2);
+                unit = "million days";
+            } else if (days >= 1000) {
+                displayValue = (days / 1000).toFixed(2);
+                unit = "thousand days";
+            } else {
+                displayValue = Math.floor(days).toString();
+                unit = "days";
+            }
+        } else {
+            // Numbers (started/completed)
+            if (value >= 1000000000) {
+                displayValue = (value / 1000000000).toFixed(2);
+                unit = "billion";
+            } else if (value >= 1000000) {
+                displayValue = (value / 1000000).toFixed(2);
+                unit = "million";
+            } else if (value >= 1000) {
+                displayValue = (value / 1000).toFixed(2);
+                unit = "thousand";
+            } else {
+                displayValue = value.toString();
+                unit = "";
+            }
+        }
+    }
+
+    return (
+        <div className="flex flex-col" style={{ opacity: loaded ? 1 : 0.5 }}>
+            <span className="text-xs font-bold opacity-50 mb-4 uppercase tracking-widest" style={{ color: theme.textDim }}>{label}</span>
+            <div className="flex items-baseline gap-2">
+                <span className="text-6xl font-bold" style={{ color: theme.text }}>
+                    {loaded ? displayValue : "0.00"}
+                </span>
+                <span className="text-2xl font-bold" style={{ color: theme.text }}>{unit}</span>
+            </div>
+        </div>
+    );
+}
 
 function ExternLink({ href, icon: Icon, label, theme }: { href: string, icon: any, label: string, theme: any }) {
     return (
@@ -206,61 +319,4 @@ function ShortcutRow({ keys, desc, theme, plus }: { keys: string[], desc: string
     );
 }
 
-function formatTypingTime(seconds: number) {
-    if (seconds === 0) return "0s";
-    const y = Math.floor(seconds / (3600 * 24 * 365.25));
-    seconds %= (3600 * 24 * 365.25);
-    const d = Math.floor(seconds / (3600 * 24));
-    seconds %= (3600 * 24);
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
 
-    const parts = [];
-    if (y > 0) parts.push(`${y}y`);
-    if (d > 0) parts.push(`${d}d`);
-    if (h > 0) parts.push(h.toString().padStart(2, '0') + 'h');
-    if (y === 0 && d === 0 && h === 0 && m > 0) parts.push(m.toString().padStart(2, '0') + 'm');
-    
-    return parts.join(" ") || "0s";
-}
-
-function GlobalActivityGraph({ theme, data }: { theme: any, data: number[] }) {
-    const max = Math.max(...data, 1);
-
-    return (
-        <div className="w-full flex items-end gap-[1px] h-32 sm:h-40">
-            {data.map((val, i) => (
-                <motion.div
-                    key={i}
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: `${(val / max) * 100}%`, opacity: 0.8 }}
-                    transition={{ delay: i * 0.02, duration: 0.5, ease: "easeOut" }}
-                    className="flex-1 rounded-t-[2px] transition-all duration-300 hover:opacity-100 cursor-crosshair relative group"
-                    style={{ backgroundColor: theme.primary }}
-                >
-                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 rounded text-[10px] font-bold opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-lg z-10"
-                         style={{ backgroundColor: theme.text, color: theme.bg }}>
-                        Day {i + 1}
-                    </div>
-                </motion.div>
-            ))}
-        </div>
-    );
-}
-
-// Minimal SVGs for headers
-function InfoIcon(props: any) {
-    return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>;
-}
-function BugIcon(props: any) {
-    return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M8 2h8"/><path d="M12 2v4"/><path d="M14 6v2"/><path d="M10 6v2"/><path d="M2.5 12a9.5 9.5 0 0 1 19 0"/><path d="M22 17a10 10 0 0 1-20 0"/><path d="M15 10v2"/><path d="M9 10v2"/><path d="M12 14v6"/></svg>; // Abstract bug representation matching standard lucide
-}
-function HeartIcon(props: any) {
-    return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>;
-}
-function ChartBarIcon(props: any) {
-    return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>;
-}
-function KeyboardShortcutIcon(props: any) {
-    return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="2" y="4" width="20" height="16" rx="2" ry="2"/><path d="M6 8h.01"/><path d="M10 8h.01"/><path d="M14 8h.01"/><path d="M18 8h.01"/><path d="M8 12h.01"/><path d="M12 12h.01"/><path d="M16 12h.01"/><path d="M7 16h10"/></svg>;
-}
