@@ -99,10 +99,10 @@ export default function AdminNotificationsPage() {
     };
 
     return (
-        <div className="min-h-screen flex flex-col font-mono selection:bg-opacity-30" style={{ backgroundColor: activeTheme.bg, color: activeTheme.text }}>
+        <div className="min-h-screen flex flex-col font-mono selection:bg-opacity-30 pt-1 sm:pt-1.5 md:pt-3 px-[var(--content-px)]" style={{ backgroundColor: activeTheme.bg, color: activeTheme.text }}>
             <Header activeTheme={activeTheme} />
 
-            <main className="flex-1 w-full px-4 md:px-[180px] py-8 md:py-12">
+            <main className="flex-1 w-full py-8 md:py-12">
                 <div className="flex flex-col gap-8">
                     {/* Page Header */}
                     <div className="flex flex-col gap-2">

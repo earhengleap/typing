@@ -37,12 +37,12 @@ export default function AboutPage() {
 
     return (
         <div
-            className="min-h-screen flex flex-col font-mono selection:bg-white/20 px-4 md:px-0 transition-colors duration-500"
+            className="min-h-screen flex flex-col font-mono selection:bg-white/20 transition-colors duration-500 pt-1 sm:pt-1.5 md:pt-3 px-[var(--content-px)]"
             style={{ backgroundColor: activeTheme.bg, color: activeTheme.text }}
         >
             <Header activeTheme={activeTheme} />
 
-            <main className="flex-1 w-full px-4 md:px-[180px] mx-auto flex flex-col py-8 overflow-y-auto overflow-x-hidden">
+            <main className="flex-1 w-full mx-auto flex flex-col py-8 overflow-y-auto overflow-x-hidden">
                 <motion.div
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}

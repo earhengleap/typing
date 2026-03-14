@@ -103,10 +103,10 @@ function SettingsContent() {
     ];
 
     return (
-        <main className="min-h-screen transition-colors duration-300 font-sans flex flex-col" style={{ backgroundColor: activeTheme.bg }}>
+        <main className="min-h-screen transition-colors duration-300 font-sans flex flex-col pt-1 sm:pt-1.5 md:pt-3 px-[var(--content-px)]" style={{ backgroundColor: activeTheme.bg }}>
             <Header activeTheme={activeTheme} />
             
-            <div className="flex-1 w-full px-4 md:px-[180px] py-8 md:py-12 flex flex-col gap-12">
+            <div className="flex-1 w-full py-8 md:py-12 flex flex-col gap-12">
                 
                 {/* Sticky Sub-Navigation (Clone of Monkeytype .nav) */}
                 <nav 

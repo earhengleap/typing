@@ -36,12 +36,12 @@ export default function SecurityPage() {
 
     return (
         <div
-            className="min-h-screen flex flex-col transition-colors duration-500"
+            className="min-h-screen flex flex-col transition-colors duration-500 pt-1 sm:pt-1.5 md:pt-3 px-[var(--content-px)]"
             style={{ backgroundColor: activeTheme.bg }}
         >
             <Header activeTheme={activeTheme} />
 
-            <main className="flex-1 w-full max-w-4xl mx-auto px-6 py-12 md:py-20">
+            <main className="flex-1 w-full max-w-4xl mx-auto py-12 md:py-20">
                 <div className="mb-12">
                     <h1
                         className="text-4xl md:text-5xl font-bold tracking-tight mb-4"

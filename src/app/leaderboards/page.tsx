@@ -20,7 +20,7 @@ function LeaderboardPageContent() {
 
     return (
         <main
-            className="min-h-screen transition-colors duration-500 flex flex-col items-center py-8"
+            className="min-h-screen transition-colors duration-500 flex flex-col items-center pt-1 sm:pt-1.5 md:pt-3 px-[var(--content-px)]"
             style={{
                 backgroundColor: activeTheme.bg,
                 color: activeTheme.text,
@@ -29,7 +29,7 @@ function LeaderboardPageContent() {
         >
             <Header activeTheme={activeTheme} />
 
-            <div className="w-full px-4 md:px-[180px]">
+            <div className="w-full">
                 <Leaderboard
                     theme={activeTheme}
                     isModal={false}
