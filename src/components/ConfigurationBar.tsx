@@ -303,7 +303,7 @@ function CustomInputModal({ isOpen, onClose, type, onConfirm }: CustomInputModal
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex flex-col gap-6">
-                    <h2 className="text-xl font-bold text-mt-text opacity-50">
+                    <h2 className="text-xl font-bold text-mt-text opacity-50 normal-case">
                         {type === "time" ? "Test duration" : "Custom word amount"}
                     </h2>
                     
@@ -338,8 +338,7 @@ function CustomInputModal({ isOpen, onClose, type, onConfirm }: CustomInputModal
                                             e.stopPropagation();
                                         }
                                     }}
-                                    className="w-full bg-mt-bg-alt/50 border-none outline-none rounded-lg p-4 text-3xl font-mono text-mt-primary text-center selection:bg-mt-primary/30"
-                                    placeholder="0"
+                                    className="w-full bg-mt-bg-alt/50 border-none outline-none rounded-lg p-4 text-3xl font-mono text-mt-primary text-center selection:bg-mt-primary/30 caret-mt-primary"
                                 />
                             </div>
                         </div>
