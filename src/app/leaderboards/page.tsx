@@ -2,20 +2,18 @@
 
 import React, { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Header } from "@/components/Header";
 import { Leaderboard } from "@/components/Leaderboard";
 import { useMonkeyTypeStore } from "@/hooks/use-monkeytype-store";
 import { THEMES } from "@/constants/themes";
-import { Footer } from "@/components/Footer";
 
 function LeaderboardPageContent() {
     const searchParams = useSearchParams();
     const themeName = useMonkeyTypeStore((state) => state.theme);
     const activeTheme = THEMES[themeName] || THEMES.codex;
 
-    const type = (searchParams.get("type") as "allTime" | "weekly" | "daily") || "allTime";
-    const config = searchParams.get("config") || "15";
     const mode = (searchParams.get("mode") as "time" | "words") || "time";
+    const config = searchParams.get("config") || (mode === "words" ? "25" : "15");
+    const type = (searchParams.get("type") as "allTime" | "weekly" | "daily") || "allTime";
     const lang = (searchParams.get("lang") as "english" | "khmer") || "english";
 
     return (
@@ -27,7 +25,6 @@ function LeaderboardPageContent() {
                 fontFamily: "'Inter', sans-serif"
             }}
         >
-            <Header activeTheme={activeTheme} />
 
             <div className="w-full">
                 <Leaderboard
@@ -44,7 +41,6 @@ function LeaderboardPageContent() {
                 TypeFlow Leaderboards
             </div>
 
-            <Footer />
         </main>
     );
 }

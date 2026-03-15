@@ -49,6 +49,7 @@ export async function getTopLeaderboard(
                 rawWpm: typingResults.rawWpm,
                 consistency: typingResults.consistency,
                 missedChars: typingResults.missedChars,
+                duration: typingResults.duration,
                 createdAt: typingResults.createdAt,
                 rn: sql<number>`row_number() over (partition by ${typingResults.userId} order by ${typingResults.wpm} desc, ${typingResults.createdAt} desc)`.as("rn"),
             })
@@ -67,6 +68,7 @@ export async function getTopLeaderboard(
                 rawWpm: sq.rawWpm,
                 consistency: sq.consistency,
                 missedChars: sq.missedChars,
+                duration: sq.duration,
                 date: sq.createdAt,
             })
             .from(sq)
@@ -81,6 +83,7 @@ export async function getTopLeaderboard(
             accuracy: Number(r.accuracy),
             rawWpm: Number(r.rawWpm),
             consistency: r.consistency ? Number(r.consistency) : null,
+            duration: r.duration ? Number(r.duration) : null,
             date: r.date.toISOString(),
         }));
     } catch (error) {
@@ -104,7 +107,7 @@ export async function getGlobalStandingsForUser(userId: string, gameMode: string
                 and(
                     eq(typingResults.userId, userId),
                     eq(typingResults.mode, gameMode),
-                    eq(typingResults.config, config),
+                    eq(typingResults.config, Number(config)),
                     eq(typingResults.isUnverified, false)
                 )
             )

@@ -115,7 +115,7 @@ export function NotificationsPanel({ isOpen, onClose, onUpdate, activeTheme }: N
                         <Icon className="w-3 h-3" />
                         <span>{title}</span>
                     </div>
-                    {items.length > 0 && (
+                    {status === "authenticated" && items.length > 0 && (
                         <div className="flex items-center gap-4">
                             {items.some(i => i.read === 0) && (
                                 <button
@@ -163,9 +163,6 @@ export function NotificationsPanel({ isOpen, onClose, onUpdate, activeTheme }: N
                                     </div>
                                     <p className="text-xs opacity-60 line-clamp-2 leading-relaxed">{item.message}</p>
                                     <div className="flex items-center justify-between mt-2">
-                                        <span className="text-[10px] opacity-30 font-medium">
-                                            {formatTimeAgo(item.createdAt)}
-                                        </span>
                                         {item.priority !== "info" && (
                                             <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded bg-black/20" style={{ color: item.priority === "critical" ? "#ef4444" : "#f59e0b" }}>
                                                 {item.priority}
@@ -173,7 +170,7 @@ export function NotificationsPanel({ isOpen, onClose, onUpdate, activeTheme }: N
                                         )}
                                     </div>
                                 </div>
-                                {item.read === 0 && (
+                                {status === "authenticated" && item.read === 0 && (
                                     <button
                                         onClick={() => handleMarkAsRead(item.id, type)}
                                         className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg hover:bg-black/5 transition-colors opacity-0 group-hover:opacity-100"
@@ -182,12 +179,14 @@ export function NotificationsPanel({ isOpen, onClose, onUpdate, activeTheme }: N
                                         <CheckCircle2 className="w-4 h-4" />
                                     </button>
                                 )}
-                                <button
-                                    onClick={() => handleDelete(item.id)}
-                                    className={`absolute right-3 ${item.read === 0 ? 'top-1/4' : 'top-1/2 -translate-y-1/2'} p-2 rounded-lg hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 text-red-500/50 hover:text-red-500`}
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
+                                {status === "authenticated" && (
+                                    <button
+                                        onClick={() => handleDelete(item.id)}
+                                        className={`absolute right-3 ${item.read === 0 ? 'top-1/4' : 'top-1/2 -translate-y-1/2'} p-2 rounded-lg hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 text-red-500/50 hover:text-red-500`}
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                )}
                             </motion.div>
                         ))
                     )}
@@ -267,24 +266,7 @@ export function NotificationsPanel({ isOpen, onClose, onUpdate, activeTheme }: N
 
                         {/* Content */}
                         <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 gap-10 flex flex-col scrollbar-thin scrollbar-thumb-white/10">
-                            {status === "unauthenticated" ? (
-                                <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8 text-center">
-                                    <div className="p-6 rounded-full bg-black/5" style={{ color: activeTheme.primary }}>
-                                        <LogIn className="w-12 h-12" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <h3 className="text-xl font-bold">Sign in Required</h3>
-                                        <p className="text-sm opacity-50">Please sign in to view and manage your personal notifications.</p>
-                                    </div>
-                                    <button 
-                                        onClick={() => signIn()}
-                                        className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all hover:scale-[1.02]"
-                                        style={{ backgroundColor: activeTheme.primary, color: activeTheme.bg }}
-                                    >
-                                        Sign In Now
-                                    </button>
-                                </div>
-                            ) : loading && data.inbox.length === 0 && data.announcements.length === 0 && data.notifications.length === 0 ? (
+                            {loading && data.inbox.length === 0 && data.announcements.length === 0 && data.notifications.length === 0 ? (
                                 <div className="flex-1 flex flex-col items-center justify-center gap-4 opacity-20">
                                     <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: activeTheme.primary }} />
                                     <p className="text-xs font-bold uppercase tracking-widest">Loading</p>
@@ -303,12 +285,14 @@ export function NotificationsPanel({ isOpen, onClose, onUpdate, activeTheme }: N
                             <p className="text-[10px] uppercase tracking-widest font-bold opacity-30">
                                 typeflow v{APP_VERSION}
                             </p>
-                            <button
-                                onClick={() => handleClearAll()}
-                                className="text-[10px] uppercase tracking-widest font-bold opacity-30 hover:opacity-100 transition-all underline underline-offset-4 text-red-500"
-                            >
-                                Clear all notification
-                            </button>
+                            {status === "authenticated" && (
+                                <button
+                                    onClick={() => handleClearAll()}
+                                    className="text-[10px] uppercase tracking-widest font-bold opacity-30 hover:opacity-100 transition-all underline underline-offset-4 text-red-500"
+                                >
+                                    Clear all notification
+                                </button>
+                            )}
                         </div>
                     </motion.div>
                 </>

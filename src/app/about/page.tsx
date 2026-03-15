@@ -8,12 +8,10 @@ import { useMonkeyTypeStore } from "@/hooks/use-monkeytype-store";
 import { THEMES } from "@/constants/themes";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { HandHeart, AlignLeft as AlignLeftIcon, Keyboard as KeyboardIcon, BarChart3 as ChartBarIcon } from "lucide-react";
-import { AuthenticMail } from "@/components/icons/AuthenticMail";
-import { AuthenticGithub } from "@/components/icons/AuthenticGithub";
-import { AuthenticDiscord } from "@/components/icons/AuthenticDiscord";
+import clsx from "clsx";
 import { AuthenticSupport } from "@/components/icons/AuthenticSupport";
 import { getGlobalStats, getActivityGraph, getWpmDistribution } from "@/app/actions/global-stats";
+import { Info, AlignLeft, Keyboard, BarChart3, Heart, Mail, Github, MessageSquare } from "lucide-react";
 
 export default function AboutPage() {
     const themeName = useMonkeyTypeStore((state) => state.theme);
@@ -43,10 +41,9 @@ export default function AboutPage() {
 
     return (
         <div
-            className="min-h-screen flex flex-col font-roboto selection:bg-[var(--mt-primary-20)] transition-colors duration-500 pt-1 sm:pt-1.5 md:pt-3 px-[var(--content-px)]"
-            style={{ backgroundColor: activeTheme.bg, color: activeTheme.text }}
+            className="flex-1 w-full max-w-[1050px] mx-auto px-[var(--content-px)] font-mono selection:bg-[var(--mt-primary-20)]"
+            style={{ color: activeTheme.text }}
         >
-            <Header activeTheme={activeTheme} />
 
             <main className="flex-1 w-full max-w-[1050px] mx-auto flex flex-col py-10 overflow-y-auto overflow-x-hidden">
                 <motion.div
@@ -55,41 +52,20 @@ export default function AboutPage() {
                     transition={{ duration: 0.5, ease: "easeOut" }}
                     className="flex flex-col gap-20 leading-relaxed pb-20"
                 >
-                    {/* TRIBUTE HEADER */}
-                    <div className="flex flex-col gap-1">
-                        <p className="text-sm opacity-50" style={{ color: activeTheme.textDim }}>Created with love by Hengleap. Launched on 08th of March 2026.</p>
-                    </div>
+                        <p className="text-xs opacity-50" style={{ color: activeTheme.textDim }}>created with love by hengleap. launched on 08th of march 2026.</p>
 
-                    {/* TOP STATS */}
-                    <section className="flex flex-col gap-10">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-                            <StatCard 
-                                label="tests started" 
-                                value={globalStats.testsStarted} 
-                                theme={activeTheme} 
-                                loaded={statsLoaded} 
-                            />
-                            <StatCard 
-                                label="tests completed" 
-                                value={globalStats.testsCompleted} 
-                                theme={activeTheme} 
-                                loaded={statsLoaded} 
-                            />
-                            <StatCard 
-                                label="typing time" 
-                                value={globalStats.typingTime} 
-                                theme={activeTheme} 
-                                loaded={statsLoaded} 
-                                isTime 
-                            />
+                    <section className="flex flex-col gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <StatCard label="tests started" value={globalStats.testsStarted} theme={activeTheme} loaded={statsLoaded} />
+                            <StatCard label="tests completed" value={globalStats.testsCompleted} theme={activeTheme} loaded={statsLoaded} />
+                            <StatCard label="typing time" value={globalStats.typingTime} theme={activeTheme} loaded={statsLoaded} isTime />
                         </div>
 
-                        {/* WPM DISTRIBUTION GRAPH */}
-                        <div className="flex flex-col gap-4 mt-4">
-                            <p className="text-xs opacity-50" style={{ color: activeTheme.textDim }}>
+                        <div className="flex flex-col gap-2 mt-4">
+                            <p className="text-[10px] opacity-40 font-bold" style={{ color: activeTheme.textDim }}>
                                 {statsLoaded ? `${(wpmData.total / 1000).toFixed(1)} thousand total results` : "downloading data..."}
                             </p>
-                            <div className="h-[250px] w-full flex items-end gap-[2px]">
+                            <div className="h-[200px] w-full flex items-end gap-[1px]">
                                 {statsLoaded ? (
                                     wpmData.distribution.map((count, i) => {
                                         const maxCount = Math.max(...wpmData.distribution, 1);
@@ -99,58 +75,60 @@ export default function AboutPage() {
                                                 <motion.div
                                                     initial={{ height: 0 }}
                                                     animate={{ height: `${height}%` }}
-                                                    transition={{ duration: 0.8, delay: i * 0.02 }}
-                                                    className="w-full relative rounded-t-[2px]"
+                                                    transition={{ duration: 0.8, delay: i * 0.01 }}
+                                                    className="w-full relative rounded-t-[1px] opacity-60 group-hover:opacity-100 transition-opacity"
                                                     style={{ backgroundColor: activeTheme.primary }}
                                                 >
-                                                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 rounded text-[10px] bg-black text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                                                        {count} results
+                                                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 rounded text-[9px] font-bold bg-black text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                                        {count} results ({i * 10} wpm)
                                                     </div>
                                                 </motion.div>
-                                                <div className="text-[9px] opacity-30 mt-4 whitespace-nowrap rotate-45 origin-left" style={{ color: activeTheme.textDim }}>
-                                                    {i * 10}
-                                                </div>
                                             </div>
                                         );
                                     })
                                 ) : (
-                                    <div className="w-full h-full animate-pulse bg-white/5 rounded-xl" />
+                                    <div className="w-full h-full animate-pulse bg-white/5 rounded" />
                                 )}
+                            </div>
+                            <div className="flex justify-between mt-1 text-[9px] opacity-20 font-bold uppercase tracking-widest" style={{ color: activeTheme.textDim }}>
+                                <span>0 wpm</span>
+                                <span>100 wpm</span>
+                                <span>200+ wpm</span>
                             </div>
                         </div>
                     </section>
 
                     {/* ABOUT CONTENT */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-20 gap-y-16">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-16">
                         {/* about */}
-                        <section className="flex flex-col gap-4">
-                            <div className="flex items-center gap-3">
-                                <AuthenticInfo className="w-5 h-5" style={{ color: activeTheme.primary }} />
-                                <h2 className="text-2xl font-bold" style={{ color: activeTheme.textDim }}>about</h2>
+                        <section className="flex flex-col gap-3">
+                            <div className="flex items-center gap-2">
+                                <Info size={16} style={{ color: activeTheme.primary }} />
+                                <h2 className="text-xl font-bold" style={{ color: activeTheme.textDim }}>about</h2>
                             </div>
-                            <p className="text-base opacity-80" style={{ color: activeTheme.text }}>
-                                Monkeytype is a minimalistic, customizable typing website, providing each user with a highly adjustable and pleasant experience.
+                            <p className="text-sm opacity-60 leading-relaxed" style={{ color: activeTheme.text }}>
+                                typeflow is a minimalistic, customizable typing website, providing each user with a highly adjustable and pleasant experience.
                             </p>
                         </section>
 
                         {/* word set */}
-                        <section className="flex flex-col gap-4">
-                            <div className="flex items-center gap-3">
-                                <AlignLeftIcon className="w-5 h-5" style={{ color: activeTheme.primary }} />
-                                <h2 className="text-2xl font-bold" style={{ color: activeTheme.textDim }}>word set</h2>
+                        <section className="flex flex-col gap-3">
+                            <div className="flex items-center gap-2">
+                                <AlignLeft size={16} style={{ color: activeTheme.primary }} />
+                                <h2 className="text-xl font-bold" style={{ color: activeTheme.textDim }}>word set</h2>
                             </div>
-                            <p className="text-base opacity-80" style={{ color: activeTheme.text }}>
-                                By default, this website uses the most common 200 English words. You can change this in the settings or the navigation bar to use expanded word sets, or even other languages.
+                            <p className="text-sm opacity-60 leading-relaxed" style={{ color: activeTheme.text }}>
+                                by default, this website uses the most common 200 english words. you can change this in the settings or the navigation bar to use expanded word sets, or even other languages.
                             </p>
                         </section>
 
                         {/* keybinds */}
-                        <section className="flex flex-col gap-4">
-                            <div className="flex items-center gap-3">
-                                <KeyboardIcon className="w-5 h-5" style={{ color: activeTheme.primary }} />
-                                <h2 className="text-2xl font-bold" style={{ color: activeTheme.textDim }}>keybinds</h2>
+                        <section className="flex flex-col gap-3">
+                            <div className="flex items-center gap-2">
+                                <Keyboard size={16} style={{ color: activeTheme.primary }} />
+                                <h2 className="text-xl font-bold" style={{ color: activeTheme.textDim }}>keybinds</h2>
                             </div>
-                            <div className="flex flex-col gap-2">
+                            <div className="flex flex-col gap-3">
                                 <ShortcutRow keys={["tab"]} plus={["enter"]} desc="restart test" theme={activeTheme} />
                                 <ShortcutRow keys={["esc"]} desc="command line" theme={activeTheme} />
                                 <ShortcutRow keys={["ctrl", "shift", "p"]} desc="command line" theme={activeTheme} />
@@ -158,50 +136,48 @@ export default function AboutPage() {
                         </section>
 
                         {/* results screen */}
-                        <section className="flex flex-col gap-4">
-                            <div className="flex items-center gap-3">
-                                <ChartBarIcon className="w-5 h-5" style={{ color: activeTheme.primary }} />
-                                <h2 className="text-2xl font-bold" style={{ color: activeTheme.textDim }}>results screen</h2>
+                        <section className="flex flex-col gap-3">
+                            <div className="flex items-center gap-2">
+                                <BarChart3 size={16} style={{ color: activeTheme.primary }} />
+                                <h2 className="text-xl font-bold" style={{ color: activeTheme.textDim }}>results screen</h2>
                             </div>
-                            <p className="text-base opacity-80" style={{ color: activeTheme.text }}>
-                                After completing a test, you are presented with a lot of data, including WPM, accuracy, consistency, and a chart showing your performance during the test.
+                            <p className="text-sm opacity-60 leading-relaxed" style={{ color: activeTheme.text }}>
+                                after completing a test, you are presented with a lot of data, including wpm, accuracy, consistency, and a chart showing your performance during the test.
                             </p>
                         </section>
 
                         {/* support */}
-                        <section className="flex flex-col gap-4">
-                            <div className="flex items-center gap-3">
-                                <AuthenticSupport className="w-5 h-5" style={{ color: activeTheme.primary }} />
-                                <h2 className="text-2xl font-bold" style={{ color: activeTheme.textDim }}>support</h2>
+                        <section className="flex flex-col gap-3">
+                            <div className="flex items-center gap-2">
+                                <Heart size={16} style={{ color: activeTheme.primary }} />
+                                <h2 className="text-xl font-bold" style={{ color: activeTheme.textDim }}>support</h2>
                             </div>
-                            <p className="text-base opacity-80" style={{ color: activeTheme.text }}>
-                                If you enjoy this project and would like to support its continued development, please consider donating.
+                            <p className="text-sm opacity-60 leading-relaxed" style={{ color: activeTheme.text }}>
+                                if you enjoy this project and would like to support its continued development, please consider donating.
                             </p>
-                            <div className="flex flex-wrap gap-4 mt-2">
-                                <ExternLink href="https://ko-fi.com/" icon={HandHeart} label="Donate" theme={activeTheme} />
+                            <div className="mt-2">
+                                <ExternLink href="https://ko-fi.com/" icon={Heart} label="donate" theme={activeTheme} full />
                             </div>
                         </section>
 
                         {/* contact */}
-                        <section className="flex flex-col gap-4">
-                            <div className="flex items-center gap-3">
-                                <AuthenticMail className="w-5 h-5" style={{ color: activeTheme.primary }} />
-                                <h2 className="text-2xl font-bold" style={{ color: activeTheme.textDim }}>contact</h2>
+                        <section className="flex flex-col gap-3">
+                            <div className="flex items-center gap-2">
+                                <Mail size={16} style={{ color: activeTheme.primary }} />
+                                <h2 className="text-xl font-bold" style={{ color: activeTheme.textDim }}>contact</h2>
                             </div>
-                            <p className="text-base opacity-80" style={{ color: activeTheme.text }}>
-                                If you encounter a bug, or have a feature request - join the Discord server, send me an email, or create an issue on GitHub.
+                            <p className="text-sm opacity-60 leading-relaxed" style={{ color: activeTheme.text }}>
+                                join the discord server, send an email, or create an issue on github.
                             </p>
-                            <div className="flex flex-wrap gap-4 mt-2">
-                                <ExternLink href="https://discord.gg/typeflow" icon={AuthenticDiscord} label="Discord" theme={activeTheme} />
-                                <ExternLink href="mailto:support@typeflow.com" icon={AuthenticMail} label="Email" theme={activeTheme} />
-                                <ExternLink href="https://github.com/earhengleap/typing/issues" icon={AuthenticGithub} label="GitHub" theme={activeTheme} />
+                            <div className="grid grid-cols-2 gap-2 mt-2">
+                                <ExternLink href="https://discord.gg/typeflow" icon={MessageSquare} label="discord" theme={activeTheme} />
+                                <ExternLink href="mailto:support@typeflow.com" icon={Mail} label="email" theme={activeTheme} />
+                                <ExternLink href="https://github.com/earhengleap/typing" icon={Github} label="github" theme={activeTheme} />
                             </div>
                         </section>
                     </div>
                 </motion.div>
             </main>
-
-            <Footer />
         </div>
     );
 }
@@ -218,28 +194,15 @@ function StatCard({ label, value, theme, loaded, isTime = false }: {
     isTime?: boolean
 }) {
     let displayValue = "0.00";
-    let unit = "million";
+    let unit = "";
 
     if (loaded) {
         if (isTime) {
-            // Typing time in days
             const days = value / (3600 * 24);
-            if (days >= 1000000) {
-                displayValue = (days / 1000000).toFixed(2);
-                unit = "million days";
-            } else if (days >= 1000) {
-                displayValue = (days / 1000).toFixed(2);
-                unit = "thousand days";
-            } else {
-                displayValue = Math.floor(days).toString();
-                unit = "days";
-            }
+            displayValue = days.toFixed(2);
+            unit = "days";
         } else {
-            // Numbers (started/completed)
-            if (value >= 1000000000) {
-                displayValue = (value / 1000000000).toFixed(2);
-                unit = "billion";
-            } else if (value >= 1000000) {
+            if (value >= 1000000) {
                 displayValue = (value / 1000000).toFixed(2);
                 unit = "million";
             } else if (value >= 1000) {
@@ -247,83 +210,75 @@ function StatCard({ label, value, theme, loaded, isTime = false }: {
                 unit = "thousand";
             } else {
                 displayValue = value.toString();
-                unit = "";
             }
         }
     }
 
     return (
         <div className="flex flex-col">
-            <span className="text-xs font-bold opacity-50 mb-4 uppercase tracking-widest" style={{ color: theme.textDim }}>{label}</span>
-            <div className="flex items-baseline gap-2 h-[60px]"> {/* Fixed height to prevent layout shift */}
+            <span className="text-[10px] font-bold opacity-40 mb-2 tracking-widest uppercase" style={{ color: theme.textDim }}>{label}</span>
+            <div className="flex items-baseline gap-2">
                 {loaded ? (
                     <>
-                        <span className="text-6xl font-bold" style={{ color: theme.text }}>
+                        <span className="text-5xl font-black transition-all" style={{ color: theme.primary }}>
                             {displayValue}
                         </span>
-                        <span className="text-2xl font-bold" style={{ color: theme.text }}>{unit}</span>
+                        <span className="text-xs font-bold opacity-40" style={{ color: theme.textDim }}>{unit}</span>
                     </>
                 ) : (
-                    <div className="flex items-baseline gap-2 animate-pulse">
-                        <div className="w-32 h-12 rounded-lg bg-current opacity-10" style={{ color: theme.text }} />
-                        <div className="w-16 h-6 rounded-md bg-current opacity-5" style={{ color: theme.text }} />
-                    </div>
+                    <div className="w-24 h-10 animate-pulse bg-white/5 rounded" />
                 )}
             </div>
         </div>
     );
 }
 
-function ExternLink({ href, icon: Icon, label, theme }: { href: string, icon: any, label: string, theme: any }) {
+function ExternLink({ href, icon: Icon, label, theme, full }: { href: string, icon: any, label: string, theme: any, full?: boolean }) {
     return (
         <a
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 px-3 py-1.5 rounded bg-black/5 hover:bg-black/10 transition-colors duration-200 group"
+            className={clsx(
+                "flex items-center justify-center gap-2 px-6 py-3 rounded-xl transition-all duration-200 group font-bold text-sm",
+                full ? "w-full" : "flex-1"
+            )}
+            style={{ 
+                backgroundColor: theme.bgAlt,
+                color: theme.textDim 
+            }}
+            onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = theme.primary;
+                e.currentTarget.style.color = theme.bg;
+            }}
+            onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = theme.bgAlt;
+                e.currentTarget.style.color = theme.textDim;
+            }}
         >
-            <Icon className="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity" style={{ color: theme.primary }} />
-            <span className="text-sm font-bold opacity-80 group-hover:opacity-100 transition-opacity" style={{ color: theme.text }}>
-                {label}
-            </span>
+            <Icon size={16} className="transition-transform group-hover:scale-110" />
+            <span>{label}</span>
         </a>
     );
 }
 
 function ShortcutRow({ keys, desc, theme, plus }: { keys: string[], desc: string, theme: any, plus?: string[] }) {
     return (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
-            <div className="flex items-center gap-1.5 flex-wrap">
+        <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5 min-w-[120px]">
                 {keys.map((k, i) => (
                     <React.Fragment key={k}>
                         <kbd
-                            className="px-2 py-1 rounded text-xs font-bold shadow-sm uppercase whitespace-nowrap"
-                            style={{ backgroundColor: `${theme.textDim}20`, color: theme.text }}
+                            className="px-2 py-0.5 rounded text-[10px] font-bold shadow-sm lowercase bg-current bg-opacity-10"
+                            style={{ color: theme.text }}
                         >
                             {k}
                         </kbd>
-                        {i < keys.length - 1 && <span className="text-xs opacity-50" style={{ color: theme.textDim }}>+</span>}
+                        {i < keys.length - 1 && <span className="text-[10px] opacity-20">+</span>}
                     </React.Fragment>
                 ))}
-                
-                {plus && plus.length > 0 && (
-                    <>
-                        <span className="text-xs opacity-50 mx-1" style={{ color: theme.textDim }}>or</span>
-                        {plus.map((k, i) => (
-                            <React.Fragment key={k}>
-                                <kbd
-                                    className="px-2 py-1 rounded text-xs font-bold shadow-sm uppercase whitespace-nowrap"
-                                    style={{ backgroundColor: `${theme.textDim}20`, color: theme.text }}
-                                >
-                                    {k}
-                                </kbd>
-                                {i < plus.length - 1 && <span className="text-xs opacity-50" style={{ color: theme.textDim }}>+</span>}
-                            </React.Fragment>
-                        ))}
-                    </>
-                )}
             </div>
-            <span className="text-sm opacity-60 ml-1 sm:ml-0" style={{ color: theme.textDim }}>- {desc}</span>
+            <span className="text-xs opacity-40 font-bold" style={{ color: theme.textDim }}>{desc}</span>
         </div>
     );
 }

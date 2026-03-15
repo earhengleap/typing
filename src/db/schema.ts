@@ -1,4 +1,4 @@
-import { timestamp, pgTable, text, primaryKey, integer, varchar, jsonb, index, boolean } from "drizzle-orm/pg-core";
+import { timestamp, pgTable, text, primaryKey, integer, varchar, jsonb, index, boolean, real } from "drizzle-orm/pg-core";
 import type { AdapterAccountType } from "next-auth/adapters";
 
 export const users = pgTable("user", {
@@ -104,15 +104,15 @@ export const typingResults = pgTable("typing_result", {
     userId: text("user_id")
         .notNull()
         .references(() => users.id, { onDelete: "cascade" }),
-    wpm: integer("wpm").notNull(),
-    rawWpm: integer("raw_wpm").notNull(),
-    accuracy: integer("accuracy").notNull(),
-    consistency: integer("consistency"),
+    wpm: real("wpm").notNull(),
+    rawWpm: real("raw_wpm").notNull(),
+    accuracy: real("accuracy").notNull(),
+    consistency: real("consistency"),
     mode: varchar("mode", { length: 50 }).notNull(),
     config: integer("config").notNull(),
     language: varchar("language", { length: 50 }).notNull(),
     theme: varchar("theme", { length: 50 }).notNull(),
-    duration: integer("duration"),
+    duration: real("duration"),
     missedChars: integer("missed_chars"),
     afk: integer("afk"),
     isUnverified: boolean("is_unverified").default(false),

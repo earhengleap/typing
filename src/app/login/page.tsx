@@ -198,7 +198,6 @@ export default function LoginPage() {
             className="min-h-screen flex flex-col items-center font-roboto transition-colors duration-500 overflow-x-hidden relative pt-1 sm:pt-1.5 md:pt-3 px-[var(--content-px)]"
             style={{ backgroundColor: activeTheme.bg, color: activeTheme.textDim }}
         >
-            <Header activeTheme={activeTheme} />
             <main className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 z-10 w-full">
                 <div className="w-full max-w-[950px] grid grid-cols-1 md:grid-cols-2 gap-x-12 lg:gap-x-24 gap-y-16 py-8 md:py-20 items-start">
                     {/* Register Section */}

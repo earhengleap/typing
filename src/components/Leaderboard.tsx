@@ -19,6 +19,7 @@ interface LeaderboardEntry {
     rawWpm: number;
     consistency?: number;
     missedChars?: number;
+    duration?: number;
     date: string;
 }
 
@@ -106,9 +107,9 @@ export function Leaderboard({
         return () => clearInterval(timer);
     }, [initialType, searchParams]);
 
-    const activeTab = (searchParams.get("type") as "allTime" | "weekly" | "daily") || initialType;
     const activeMode = (searchParams.get("mode") as "time" | "words") || initialMode;
-    const activeConfig = searchParams.get("config") || initialConfig;
+    const activeConfig = searchParams.get("config") || (activeMode === "words" ? "25" : "15");
+    const activeTab = (searchParams.get("type") as "allTime" | "weekly" | "daily") || initialType;
     const activeLanguage = (searchParams.get("lang") as "english" | "khmer") || initialLanguage;
 
     useEffect(() => {
@@ -309,6 +310,7 @@ export function Leaderboard({
                                     <th className="px-4 py-2 text-right hidden sm:table-cell">missed</th>
                                     <th className="px-4 py-2 text-right hidden sm:table-cell">consistency</th>
                                     <th className="px-4 py-2 text-right md:table-cell hidden">raw</th>
+                                    {activeMode === "words" && <th className="px-4 py-2 text-right md:table-cell hidden">time</th>}
                                     <th className="px-4 py-2 text-right md:table-cell hidden">date</th>
                                 </tr>
                             </thead>
@@ -407,6 +409,13 @@ export function Leaderboard({
                                                 <td className="px-4 py-3 text-right md:table-cell hidden">
                                                     <span className="opacity-50 tabular-nums">{(entry.rawWpm ?? 0).toFixed(2)}</span>
                                                 </td>
+                                                {activeMode === "words" && (
+                                                    <td className="px-4 py-3 text-right md:table-cell hidden">
+                                                        <span className="opacity-50 tabular-nums">
+                                                            {entry.duration ? `${Math.floor(entry.duration / 60)}:${String(entry.duration % 60).padStart(2, '0')}` : '-'}
+                                                        </span>
+                                                    </td>
+                                                )}
                                                 <td className="px-4 py-3 text-right rounded-r-2xl md:table-cell hidden">
                                                     <div className="flex flex-col leading-tight">
                                                         <span className="text-[10px] font-bold">{date}</span>

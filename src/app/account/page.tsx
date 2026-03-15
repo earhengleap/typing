@@ -4,7 +4,6 @@ import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { THEMES } from "@/constants/themes";
 import { useMonkeyTypeStore, RunHistory } from "@/hooks/use-monkeytype-store";
-import { Header } from "@/components/Header";
 import { motion } from "framer-motion";
 import { useEffect, useState, useMemo } from "react";
 import { getAccountDashboardData, updateAccount } from "@/app/actions/typing-results";
@@ -247,7 +246,6 @@ export default function AccountPage() {
 
     return (
         <main className="min-h-screen transition-colors duration-300 pb-20 scroll-smooth selection:bg-[var(--mt-primary-20)] pt-1 sm:pt-1.5 md:pt-3 px-[var(--content-px)]" style={{ backgroundColor: activeTheme.bg }}>
-            <Header activeTheme={activeTheme} />
             <div className="max-w-6xl mx-auto py-8 flex flex-col gap-12">
 
                 {/* Profile Header */}

@@ -113,11 +113,7 @@ export function Header({ activeTheme }: HeaderProps) {
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => {
-                                if (status === "unauthenticated") {
-                                    window.location.href = "/login";
-                                } else {
-                                    setIsNotificationsOpen(true);
-                                }
+                                setIsNotificationsOpen(true);
                             }}
                             className="p-1.5 sm:p-2 rounded-xl transition-all hover:bg-white/5 group relative cursor-pointer"
                             type="button"

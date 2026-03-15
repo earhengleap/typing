@@ -11,7 +11,7 @@ export const proxy = auth((req: any) => {
     const isAdminRoute = nextUrl.pathname.startsWith("/admin");
     const isLoginPage = nextUrl.pathname === "/admin/login";
     const isAuthPage = ["/login", "/admin/login"].some(path => nextUrl.pathname === path);
-    const isUserRoute = ["/settings", "/account", "/account-settings"].some(path => nextUrl.pathname.startsWith(path));
+    const isUserRoute = ["/account", "/account-settings"].some(path => nextUrl.pathname.startsWith(path));
 
     // Redirect logged-in users away from auth pages
     if (isAuthPage && isLoggedIn) {

@@ -11,8 +11,7 @@ import { useMonkeyTypeStore, GameMode, GameConfig, Language, Theme, ChartPoint }
 import { THEMES } from "@/constants/themes";
 import { incrementTestsStarted, getGhostRun, saveTypingResult } from "@/app/actions/typing-results";
 import { ACHIEVEMENTS } from "@/constants/achievements";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
+import { ConfigurationBar } from "@/components/ConfigurationBar";
 
 const WORD_POOL = [
     "function", "variable", "constant", "component", "interface", "generic", "promise", "async", "await", "callback",
@@ -420,7 +419,8 @@ export default function MonkeyTypePage() {
         soundEnabled, showLiveWpm, showLiveAccuracy, fontSize, fontFamily, soundType, soundVolume, soundOnError, playTimeWarning, favoriteThemes,
         setIsActive, setIsFinished, setTimeLeft, setStats, setChartData, resetLiveState, addHistory,
         setMode, setConfig, setLanguage, setTheme, setIsWrongKeyboardLayout, setSettings, toggleFavoriteTheme,
-        isSearchOpen, setIsSearchOpen, searchQuery, setSearchQuery, selectedIndex, setSelectedIndex, activeCommandGroup, setActiveCommandGroup
+        isSearchOpen, setIsSearchOpen, searchQuery, setSearchQuery, selectedIndex, setSelectedIndex, activeCommandGroup, setActiveCommandGroup,
+        punctuation, numbers, setPunctuation, setNumbers
     } = useMonkeyTypeStore();
 
     // -- Advance Sound System --
@@ -889,12 +889,25 @@ export default function MonkeyTypePage() {
 
         const count = targetMode === "words" ? (targetConfig as number) : 300;
         const generated: string[] = [];
-        const pool = targetLang === "khmer" ? KHMER_WORD_POOL : WORD_POOL;
+        let pool = targetLang === "khmer" ? KHMER_WORD_POOL : WORD_POOL;
+
+        // Apply punctuation and numbers if enabled
+        if (targetLang === "english") {
+            if (numbers) {
+                const numPool = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+                pool = [...pool, ...numPool];
+            }
+            if (punctuation) {
+                const punctPool = [".", ",", "!", "?", ";", ":", "-", "(", ")", "\"", "'"];
+                pool = [...pool, ...punctPool];
+            }
+        }
+
         for (let i = 0; i < count; i++) {
             generated.push(pool[Math.floor(Math.random() * pool.length)]);
         }
         setWords(generated);
-    }, [mode, config, language, setWords]);
+    }, [mode, config, language, punctuation, numbers, setWords]);
 
     const startTest = useCallback(() => {
         setIsActive(true);
@@ -1751,7 +1764,7 @@ export default function MonkeyTypePage() {
     return (
         <div
             className={cn(
-                "h-screen h-[100dvh] w-full flex flex-col items-center justify-between overflow-hidden select-none theme-transition",
+                "flex-1 w-full flex flex-col items-center justify-between overflow-hidden select-none theme-transition",
                 "pt-1 sm:pt-1.5 md:pt-3 px-[var(--content-px)] pb-1 sm:pb-2 md:pb-4",
                 language === "khmer" ? "font-sans font-medium" : "font-mono"
             )}
@@ -1771,8 +1784,6 @@ export default function MonkeyTypePage() {
                 '--mt-error': activeTheme.error,
             } as React.CSSProperties}
         >
-            {/* Header / Nav */}
-            <Header activeTheme={activeTheme} />
 
             {/* Local Command Palette */}
             <AnimatePresence>
@@ -1937,49 +1948,7 @@ export default function MonkeyTypePage() {
                         exit={{ opacity: 0, y: -10 }}
                         className="w-full max-w-[var(--content-max-w)] flex-1 flex flex-col justify-center gap-2 sm:gap-4 md:gap-6 lg:gap-8 min-h-0"
                     >
-                        {/* Mode Selector Config Bar */}
-                        <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-4 p-1 sm:p-2 rounded-xl self-center text-[10px] sm:text-xs font-bold shadow-2xl theme-transition max-w-full" style={{ backgroundColor: 'var(--mt-bg-alt)' }}>
-                            {/* Group 1: Time / Words */}
-                            <div className="flex items-center gap-0.5 sm:gap-2">
-                                <button onClick={() => { setMode("time"); const nextConfig = (config === 15 || config === 30 || config === 60 || config === 120) ? config : 30; setConfig(nextConfig as GameConfig); resetTest(nextConfig as GameConfig, "time"); }} className={cn("flex items-center gap-1 sm:gap-1.5 py-1 sm:py-1.5 px-1.5 sm:px-3 transition-all outline-none rounded-lg cursor-pointer", mode === "time" ? "text-[var(--mt-primary)] bg-[var(--mt-bg)]/50" : "hover:text-[var(--mt-text)]")}>
-                                    <Timer className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> time
-                                </button>
-                                <button onClick={() => { setMode("words"); const nextConfig = (config === 10 || config === 25 || config === 50 || config === 100) ? config : 25; setConfig(nextConfig as GameConfig); resetTest(nextConfig as GameConfig, "words"); }} className={cn("flex items-center gap-1 sm:gap-1.5 py-1 sm:py-1.5 px-1.5 sm:px-3 transition-all outline-none rounded-lg cursor-pointer", mode === "words" ? "text-[var(--mt-primary)] bg-[var(--mt-bg)]/50" : "hover:text-[var(--mt-text)]")}>
-                                    <Type className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> words
-                                </button>
-                            </div>
-
-                            <div className="hidden md:block w-[3px] h-4 rounded-full bg-[var(--mt-text-dim)] opacity-20" />
-
-                            {/* Group 2: Values (15/30/60... or 10/25/50...) */}
-                            <div className="flex items-center justify-center gap-0.5 sm:gap-2">
-                                {mode === "time" ? (
-                                    [15, 30, 60, 120].map(t => (
-                                        <button key={t} onClick={() => { setConfig(t as GameConfig); resetTest(t as GameConfig); }} className={cn("py-1 sm:py-1.5 px-1.5 sm:px-3 transition-all outline-none rounded-lg cursor-pointer", config === t ? "text-[var(--mt-primary)] bg-[var(--mt-bg)]/50" : "hover:text-[var(--mt-text)]")}>
-                                            {t}
-                                        </button>
-                                    ))
-                                ) : (
-                                    [10, 25, 50, 100].map(w => (
-                                        <button key={w} onClick={() => { setConfig(w as GameConfig); resetTest(w as GameConfig); }} className={cn("py-1 sm:py-1.5 px-1.5 sm:px-3 transition-all outline-none rounded-lg cursor-pointer", config === w ? "text-[var(--mt-primary)] bg-[var(--mt-bg)]/50" : "hover:text-[var(--mt-text)]")}>
-                                            {w}
-                                        </button>
-                                    ))
-                                )}
-                            </div>
-
-                            <div className="hidden md:block w-[3px] h-4 rounded-full bg-[var(--mt-text-dim)] opacity-20" />
-
-                            {/* Group 3: Language */}
-                            <div className="flex items-center gap-0.5 sm:gap-2">
-                                <button onClick={() => { setLanguage("english"); resetTest(undefined, undefined, "english"); }} className={cn("py-1 sm:py-1.5 px-1.5 sm:px-3 transition-all outline-none rounded-lg cursor-pointer", language === "english" ? "text-[var(--mt-primary)] bg-[var(--mt-bg)]/50" : "hover:text-[var(--mt-text)]")}>
-                                    english
-                                </button>
-                                <button onClick={() => { setLanguage("khmer"); resetTest(undefined, undefined, "khmer"); }} className={cn("py-1 sm:py-1.5 px-1.5 sm:px-3 transition-all outline-none rounded-lg cursor-pointer", language === "khmer" ? "text-[var(--mt-primary)] bg-[var(--mt-bg)]/50" : "hover:text-[var(--mt-text)]")}>
-                                    khmer
-                                </button>
-                            </div>
-                        </div>
+                        <ConfigurationBar />
 
                         <div className="relative w-full flex flex-col gap-2 sm:gap-4 md:gap-6 lg:gap-8">
                             {/* Inner Container (No longer blurred here) */}
@@ -2005,7 +1974,7 @@ export default function MonkeyTypePage() {
                                     )}
                                 </AnimatePresence>
 
-                                <div className="h-8 flex justify-center items-center gap-4">
+                                <div className="h-8 flex justify-start items-center gap-4 px-1 sm:px-4">
                                     {isActive && (
                                         <>
                                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-3xl font-bold transition-colors duration-500" style={{ color: activeTheme.primary }}>
@@ -2513,7 +2482,6 @@ export default function MonkeyTypePage() {
                 <Terminal className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
 
-            <Footer />
         </div >
     );
 }

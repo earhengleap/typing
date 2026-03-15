@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type GameMode = "time" | "words";
-export type GameConfig = 15 | 30 | 60 | 120 | 10 | 25 | 50 | 100;
+export type GameMode = "time" | "words" | "quote" | "zen" | "custom";
+export type GameConfig = 15 | 30 | 60 | 120 | 10 | 25 | 50 | 100 | number;
 export type Language = "english" | "khmer";
 export type Theme = "codex" | "cyberpunk" | "dracula" | "retro" | "nord" | "monokai" | "solarized" | "tokyonight";
 
@@ -64,6 +64,10 @@ interface MonkeyTypeState {
     setConfig: (config: GameConfig) => void;
     setLanguage: (language: Language) => void;
     setTheme: (theme: Theme) => void;
+    punctuation: boolean;
+    numbers: boolean;
+    setPunctuation: (v: boolean) => void;
+    setNumbers: (v: boolean) => void;
     favoriteThemes: Theme[];
     toggleFavoriteTheme: (theme: Theme) => void;
 
@@ -147,6 +151,10 @@ export const useMonkeyTypeStore = create<MonkeyTypeState>()(
             setConfig: (config) => set({ config }),
             setLanguage: (language) => set({ language }),
             setTheme: (theme) => set({ theme }),
+            punctuation: false,
+            numbers: false,
+            setPunctuation: (punctuation) => set({ punctuation }),
+            setNumbers: (numbers) => set({ numbers }),
             favoriteThemes: [],
             toggleFavoriteTheme: (t) => set((state) => ({
                 favoriteThemes: state.favoriteThemes.includes(t)
@@ -252,6 +260,8 @@ export const useMonkeyTypeStore = create<MonkeyTypeState>()(
                 config: state.config,
                 language: state.language,
                 theme: state.theme,
+                punctuation: state.punctuation,
+                numbers: state.numbers,
                 favoriteThemes: state.favoriteThemes,
                 history: state.history,
                 soundEnabled: state.soundEnabled,

@@ -47,22 +47,26 @@ export const metadata: Metadata = {
   },
 };
 
+import { MainLayout } from "@/components/MainLayout";
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" className="dark" suppressHydrationWarning={true}>
       <body
         className={`${jetbrainsMono.variable} ${hanuman.variable} ${robotoMono.variable} antialiased`}
-        suppressHydrationWarning
+        suppressHydrationWarning={true}
       >
         <SessionProvider refetchOnWindowFocus={false}>
           <Suspense fallback={null}>
             <ReferralTracker />
           </Suspense>
-          {children}
+          <MainLayout>
+            {children}
+          </MainLayout>
         </SessionProvider>
       </body>
     </html>

@@ -1,8 +1,6 @@
 "use client";
 
 import React from "react";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 import { useMonkeyTypeStore } from "@/hooks/use-monkeytype-store";
 import { THEMES } from "@/constants/themes";
 import { Shield, Lock, Server, Bug } from "lucide-react";
@@ -39,7 +37,6 @@ export default function SecurityPage() {
             className="min-h-screen flex flex-col transition-colors duration-500 pt-1 sm:pt-1.5 md:pt-3 px-[var(--content-px)]"
             style={{ backgroundColor: activeTheme.bg }}
         >
-            <Header activeTheme={activeTheme} />
 
             <main className="flex-1 w-full max-w-4xl mx-auto py-12 md:py-20">
                 <div className="mb-12">
@@ -105,7 +102,6 @@ export default function SecurityPage() {
                 </div>
             </main>
 
-            <Footer />
         </div>
     );
 }
