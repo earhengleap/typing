@@ -1876,7 +1876,7 @@ export default function MonkeyTypePage() {
                 const rect = extraEl.getBoundingClientRect();
                 const containerRect = wordsRef.current.getBoundingClientRect();
                 setCaretPos({
-                    top: rect.top - containerRect.top + lineOffset,
+                    top: rect.top - containerRect.top,
                     left: rect.right - containerRect.left
                 });
                 return;
@@ -1889,7 +1889,7 @@ export default function MonkeyTypePage() {
                 const rect = lastCharEl.getBoundingClientRect();
                 const containerRect = wordsRef.current.getBoundingClientRect();
                 setCaretPos({
-                    top: rect.top - containerRect.top + lineOffset,
+                    top: rect.top - containerRect.top,
                     left: rect.right - containerRect.left
                 });
                 return;
@@ -1906,7 +1906,7 @@ export default function MonkeyTypePage() {
             
             // Direct immediate position update
             setCaretPos({
-                top: charRect.top - containerRect.top + lineOffset,
+                top: charRect.top - containerRect.top,
                 left: charRect.left - containerRect.left
             });
 
