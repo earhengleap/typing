@@ -250,10 +250,11 @@ function SettingsContent() {
                                             activeTheme={activeTheme}
                                             options={[
                                                 { label: 'mechanical', value: 'mechanical' },
+                                                { label: 'nk creams', value: 'nk_creams' },
                                                 { label: 'soft', value: 'soft' }
                                             ]}
                                             value={store.soundType}
-                                            onChange={(v) => store.setSoundType(v as 'mechanical' | 'soft')}
+                                            onChange={(v) => store.setSoundType(v)}
                                         />
                                     }
                                 />

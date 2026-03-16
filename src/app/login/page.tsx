@@ -18,7 +18,6 @@ import { motion, Variants } from "framer-motion";
 import Link from "next/link";
 import { forgotPassword } from "@/app/actions/auth";
 import { useRouter } from "next/navigation";
-import { Header } from "@/components/Header";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -194,10 +193,8 @@ export default function LoginPage() {
     };
 
     return (
-        <div
-            className="min-h-screen flex flex-col items-center font-roboto transition-colors duration-500 overflow-x-hidden relative pt-1 sm:pt-1.5 md:pt-3 px-[var(--content-px)]"
-            style={{ backgroundColor: activeTheme.bg, color: activeTheme.textDim }}
-        >
+        <div className="flex-1 flex flex-col items-center">
+
             <main className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 z-10 w-full">
                 <div className="w-full max-w-[950px] grid grid-cols-1 md:grid-cols-2 gap-x-12 lg:gap-x-24 gap-y-16 py-8 md:py-20 items-start">
                     {/* Register Section */}
@@ -480,35 +477,10 @@ export default function LoginPage() {
                 </div>
             )}
 
-            <footer className="w-full flex flex-col items-center gap-6 py-12 px-4 opacity-30 text-[10px] font-bold tracking-tight mt-auto">
-                <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
-                    {[
-                        { label: "contact", icon: AuthenticMail },
-                        { label: "github", icon: AuthenticGithub },
-                        { label: "discord", icon: AuthenticDiscord },
-                        { label: "twitter", icon: AuthenticTwitter },
-                        { label: "support", icon: AuthenticSupport },
-                        { label: "terms", icon: AuthenticTerms },
-                        { label: "security", icon: AuthenticSecurity },
-                        { label: "privacy", icon: AuthenticPrivacy }
-                    ].map(item => (
-                        <button key={item.label} className="flex items-center gap-1.5 hover:opacity-100 transition-opacity cursor-pointer">
-                           {typeof item.icon === 'string' ? item.icon : <item.icon className="w-3.5 h-3.5" />}
-                           {item.label}
-                        </button>
-                    ))}
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="opacity-40 select-none">v1.24.11</span>
-                    <Link href="/" className="hover:opacity-100 transition-opacity cursor-pointer flex items-center gap-1.5 group">
-                        <span className="group-hover:text-primary transition-colors">typeflow</span>
-                        <span>&copy; 2026</span>
-                    </Link>
-                </div>
-            </footer>
         </div>
     );
 }
+
 
 
 

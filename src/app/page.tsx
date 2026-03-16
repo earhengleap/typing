@@ -61,6 +61,21 @@ const KHMER_WORD_POOL = [
     "តន្ត្រី", "សិល្បៈ", "ភាពយន្ត", "ទេសចរណ៍", "អាហារ", "សុខភាព", "កម្លាំង", "ចិត្ត", "គំនិត", "ក្តីស្រមៃ"
 ];
 
+const NK_CREAMS_SOUNDS = [
+    "https://monkeytype.com/sound/click4/click4_1.wav",
+    "https://monkeytype.com/sound/click4/click4_11.wav",
+    "https://monkeytype.com/sound/click4/click4_2.wav",
+    "https://monkeytype.com/sound/click4/click4_22.wav",
+    "https://monkeytype.com/sound/click4/click4_3.wav",
+    "https://monkeytype.com/sound/click4/click4_33.wav",
+    "https://monkeytype.com/sound/click4/click4_4.wav",
+    "https://monkeytype.com/sound/click4/click4_44.wav",
+    "https://monkeytype.com/sound/click4/click4_5.wav",
+    "https://monkeytype.com/sound/click4/click4_55.wav",
+    "https://monkeytype.com/sound/click4/click4_6.wav",
+    "https://monkeytype.com/sound/click4/click4_66.wav"
+];
+
 const KEYBOARD_ROWS = [
     ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="],
     ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", "\\"],
@@ -263,58 +278,92 @@ const Word = React.memo(({
     group,
     clusters,
     clusterIndexes,
-    wordUserInput,
-    wordTargetText,
+    typedWord,
+    targetWord,
+    isActive,
+    isFinished,
     charRefs,
-    themeColors
+    extraCharRefs,
+    themeColors,
 }: {
     group: number[],
     clusters: string[],
     clusterIndexes: number[],
-    wordUserInput: string,
-    wordTargetText: string,
+    typedWord: string,
+    targetWord: string,
+    isActive: boolean,
+    isFinished: boolean,
     charRefs: React.MutableRefObject<(HTMLSpanElement | null)[]>,
-    themeColors: ThemeColors
+    extraCharRefs: React.MutableRefObject<(HTMLSpanElement | null)[]>,
+    themeColors: ThemeColors,
+    language: Language
 }) => {
+    const wordClusters = group.map(i => clusters[i]);
+    
+    // Strict border logic:
+    // Only finished and incorrect words show the error color border.
+    // The active word should NOT have an underline as per user request.
+    const isIncorrect = isFinished && typedWord !== targetWord;
+    
     return (
-        <span className="inline-block whitespace-nowrap">
-            {group.map(i => {
-                const cluster = clusters[i];
-                const clusterInWordStart = clusterIndexes[i] - clusterIndexes[group[0]];
+        <span 
+            className={cn(
+                "inline-block whitespace-nowrap px-[0.1em] transition-all duration-150 relative",
+                isIncorrect && "border-b-2"
+            )}
+            style={{
+                borderColor: isIncorrect ? themeColors.error : undefined,
+                marginBottom: isIncorrect ? '-2px' : '0'
+            }}
+        >
+            {group.map((clusterIdx, i) => {
+                const cluster = wordClusters[i];
+                const clusterInWordStart = clusterIndexes[clusterIdx] - clusterIndexes[group[0]];
                 const clusterInWordEnd = clusterInWordStart + cluster.length;
 
-                // Default: untyped — dim color
                 let color = themeColors.textDim;
-                let underline = false;
 
-                if (wordUserInput.length > clusterInWordStart) {
-                    const typedPart = wordUserInput.substring(clusterInWordStart, Math.min(wordUserInput.length, clusterInWordEnd));
-                    const targetPart = wordTargetText.substring(clusterInWordStart, Math.min(wordTargetText.length, clusterInWordStart + typedPart.length));
+                if (typedWord.length > clusterInWordStart) {
+                    const typedPart = typedWord.substring(clusterInWordStart, Math.min(typedWord.length, clusterInWordEnd));
+                    const targetPart = cluster;
 
                     if (typedPart === targetPart) {
-                        // Correctly typed — bright text
-                        color = wordUserInput.length >= clusterInWordEnd ? themeColors.text : themeColors.primary;
+                        color = themeColors.text;
                     } else {
-                        // Incorrectly typed — error color with underline
                         color = themeColors.error;
-                        underline = true;
                     }
                 }
 
                 return (
                     <span
-                        key={i}
-                        ref={el => { charRefs.current[i] = el; }}
-                        style={{
-                            color,
-                            transition: 'color 0.15s ease',
-                            borderBottom: underline ? `2px solid ${themeColors.error}` : 'none',
-                        }}
+                        key={clusterIdx}
+                        ref={el => { charRefs.current[clusterIdx] = el; }}
+                        style={{ color }}
                     >
                         {cluster === " " ? "\u00A0" : cluster}
                     </span>
                 );
             })}
+            
+            {/* Render extra characters (overtyping) - Fixed: No brackets, clean red border */}
+            {typedWord.length > targetWord.length && (
+                <span className="flex inline-flex">
+                    {Array.from(typedWord.substring(targetWord.length)).map((char, i) => (
+                        <span
+                            key={`extra-${i}`}
+                            ref={el => { if (isActive) extraCharRefs.current[i] = el; }}
+                            className="border-b-2"
+                            style={{
+                                color: themeColors.error,
+                                borderColor: themeColors.error,
+                                opacity: 0.8
+                            }}
+                        >
+                            {char === " " ? "\u00A0" : char}
+                        </span>
+                    ))}
+                </span>
+            )}
         </span>
     );
 });
@@ -570,6 +619,12 @@ export default function MonkeyTypePage() {
                     noise.start(); noise.stop(now + 0.08);
                     break;
                 }
+                case 'nk_creams': {
+                    const audio = new Audio(NK_CREAMS_SOUNDS[Math.floor(Math.random() * NK_CREAMS_SOUNDS.length)]);
+                    audio.volume = effectiveVolume * 0.4;
+                    audio.play().catch(() => {});
+                    break;
+                }
                 case 'stone': playMechanical(80, 0.15, 0.4); break;
                 case 'glass': {
                     const osc = audioCtx.createOscillator();
@@ -812,7 +867,8 @@ export default function MonkeyTypePage() {
     }, [playTimeWarning, soundVolume]);
 
     const [words, setWords] = useState<string[]>([]);
-    const [userInput, setUserInput] = useState("");
+    const [typedWords, setTypedWords] = useState<string[]>([]);
+    const [currentWordIndex, setCurrentWordIndex] = useState(0);
     const [startTime, setStartTime] = useState<number | null>(null);
 
     const [caretPos, setCaretPos] = useState({ top: 0, left: 0 });
@@ -821,6 +877,7 @@ export default function MonkeyTypePage() {
     const [isCapsLock, setIsCapsLock] = useState(false);
     const [lineOffset, setLineOffset] = useState(0);
     const [isFocused, setIsFocused] = useState(true);
+
     const [xpResult, setXpResult] = useState<{ gained: number; levelUp: boolean; newAchievements?: string[] } | null>(null);
     const [ghost, setGhost] = useState<{ wpm: number, userName: string | null } | null>(null);
     const [ghostPos, setGhostPos] = useState({ top: 0, left: 0, charIndex: 0 });
@@ -850,10 +907,23 @@ export default function MonkeyTypePage() {
         };
     }, []);
 
-    const userInputRef = useRef(userInput);
+    const typedWordsRef = useRef(typedWords);
     const wordsRefData = useRef(words);
-    useEffect(() => { userInputRef.current = userInput; }, [userInput]);
+    const currentWordIndexRef = useRef(currentWordIndex);
+    const modeRef = useRef(mode);
+    const configRef = useRef(config);
+    const languageRef = useRef(language);
+    const themeRef = useRef(theme);
+
+    useEffect(() => { typedWordsRef.current = typedWords; }, [typedWords]);
     useEffect(() => { wordsRefData.current = words; }, [words]);
+    useEffect(() => { currentWordIndexRef.current = currentWordIndex; }, [currentWordIndex]);
+    useEffect(() => { modeRef.current = mode; }, [mode]);
+    useEffect(() => { configRef.current = config; }, [config]);
+    useEffect(() => { languageRef.current = language; }, [language]);
+    useEffect(() => { themeRef.current = theme; }, [theme]);
+
+
 
     const statsRef = useRef(stats);
     const startTimeRef = useRef<number | null>(null);
@@ -867,13 +937,20 @@ export default function MonkeyTypePage() {
     const lastKeystrokeTime = useRef<number>(Date.now());
     const wordsRef = useRef<HTMLDivElement>(null);
     const charRefs = useRef<(HTMLSpanElement | null)[]>([]);
+    const extraCharRefs = useRef<(HTMLSpanElement | null)[]>([]);
     const restartRef = useRef<HTMLButtonElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
+
     const [hasMounted, setHasMounted] = useState(false);
     const wasTabPressedRef = useRef(false);
     const isCheatDetected = useRef(false);
     const lastKeystrokeIntervals = useRef<number[]>([]);
     useEffect(() => { setHasMounted(true); }, []);
+
+    // Clear Refs when word changes to avoid stale positioning
+    useEffect(() => {
+        extraCharRefs.current = [];
+    }, [currentWordIndex, words]);
 
     const activeTheme = THEMES[theme] || THEMES.codex;
 
@@ -907,7 +984,10 @@ export default function MonkeyTypePage() {
             generated.push(pool[Math.floor(Math.random() * pool.length)]);
         }
         setWords(generated);
+        setTypedWords(new Array(generated.length).fill(""));
+        setCurrentWordIndex(0);
     }, [mode, config, language, punctuation, numbers, setWords]);
+
 
     const startTest = useCallback(() => {
         setIsActive(true);
@@ -927,50 +1007,68 @@ export default function MonkeyTypePage() {
         setIsFinished(true);
         setGhost(null); // Clear ghost on finish
 
-        const elapsedMs = Date.now() - (startTime || Date.now());
+        const s = statsRef.current;
+        const elapsedMs = Date.now() - (startTimeRef.current || Date.now());
         const durationSeconds = Math.floor(elapsedMs / 1000);
 
-        // Calculate Consistency
-        let consistency = 0;
-        if (keystrokeTimes.current.length > 2) {
-            const offsets = [];
-            for (let i = 1; i < keystrokeTimes.current.length; i++) {
-                offsets.push(keystrokeTimes.current[i] - keystrokeTimes.current[i - 1]);
-            }
-            const mean = offsets.reduce((a, b) => a + b, 0) / offsets.length;
-            const variance = offsets.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / offsets.length;
-            const stdDev = Math.sqrt(variance);
-            const cv = stdDev / mean;
-            consistency = Math.max(0, Math.min(100, Math.round(100 * (1 - cv))));
-        }
+        // Final accuracy and stats check
+        let correct = 0;
+        let incorrect = 0;
+        let extra = 0;
+        let missed = 0;
+        let totalTyped = 0;
 
-        addHistory({
-            wpm: stats.wpm,
-            rawWpm: stats.rawWpm,
-            accuracy: stats.accuracy,
-            mode,
-            config,
-            language,
-            theme,
-            consistency: stats.consistency,
-            duration: durationSeconds,
-            afk: stats.afk,
-            missedChars: stats.missedChars
+        typedWordsRef.current.forEach((typed, idx) => {
+            const target = wordsRefData.current[idx];
+            if (!target) return;
+            
+            totalTyped += typed.length;
+            const maxLen = Math.max(typed.length, target.length);
+            
+            for (let i = 0; i < maxLen; i++) {
+                if (i < target.length) {
+                    if (i < typed.length) {
+                        if (typed[i] === target[i]) correct++;
+                        else incorrect++;
+                    } else {
+                        // All remaining characters in words (even current one) are missed on finish
+                        missed++;
+                    }
+                } else if (i < typed.length) {
+                    extra++;
+                }
+            }
         });
 
-        // Save to Database (Which also handles Leaderboard sync)
-        saveTypingResult({
-            wpm: stats.wpm,
-            rawWpm: stats.rawWpm,
-            accuracy: stats.accuracy,
-            consistency: stats.consistency,
-            mode,
-            config,
-            language,
-            theme,
+        const finalWpm = calculateWPM(correct, elapsedMs);
+        const finalAccuracy = totalTyped > 0 ? Math.round((correct / (correct + incorrect + extra)) * 100) : 100;
+
+        addHistory({
+            wpm: finalWpm,
+            rawWpm: s.rawWpm,
+            accuracy: finalAccuracy,
+            mode: modeRef.current,
+            config: configRef.current,
+            language: languageRef.current,
+            theme: themeRef.current,
+            consistency: s.consistency,
             duration: durationSeconds,
-            missedChars: stats.missedChars,
-            afk: stats.afk,
+            afk: s.afk,
+            missedChars: missed
+        });
+
+        saveTypingResult({
+            wpm: finalWpm,
+            rawWpm: s.rawWpm,
+            accuracy: finalAccuracy,
+            consistency: s.consistency,
+            mode: modeRef.current,
+            config: configRef.current,
+            language: languageRef.current,
+            theme: themeRef.current,
+            duration: durationSeconds,
+            missedChars: missed,
+            afk: s.afk,
             isUnverified: isCheatDetected.current
         }).then((res: { success: boolean; xpGained?: number; levelUp?: boolean; newAchievements?: string[] }) => {
             if (res.success && res.xpGained) {
@@ -981,7 +1079,8 @@ export default function MonkeyTypePage() {
                 });
             }
         });
-    }, [addHistory, config, language, mode, startTime, stats, theme, setIsActive, setIsFinished, setGhost, setXpResult]);
+    }, [addHistory, setIsActive, setIsFinished, setGhost, setXpResult]);
+
 
     const finishTestRef = useRef(finishTest);
     useEffect(() => {
@@ -1096,96 +1195,117 @@ export default function MonkeyTypePage() {
 
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        // Anti-cheat: Check if the event is trusted (generated by a user action)
+        // Anti-cheat
         if (!e.nativeEvent.isTrusted) {
             isCheatDetected.current = true;
-            console.warn("Untrusted input detected.");
         }
 
-        const value = e.target.value;
-        if (!isActive && !isFinished && value.length > 0) startTest();
+        const rawValue = e.target.value;
+        if (!isActive && !isFinished && rawValue.length > 0) startTest();
         if (isFinished) return;
 
-        setUserInput(value);
-        playClickSound();
+        // Monkeytype Logic:
+        // The input is always compared to the current word.
+        // If Space is pressed, we move to the next word.
+        // If Backspace is pressed and current word is empty, we go back to prev word if it was wrong.
 
-        // Track keystroke time for consistency and AFK
-        const now = Date.now();
-        const interval = now - lastKeystrokeTime.current;
+        const lastChar = rawValue[rawValue.length - 1];
+        const isSpace = lastChar === " ";
         
-        lastKeystrokeIntervals.current.push(interval);
-        if (lastKeystrokeIntervals.current.length > 30) {
-            lastKeystrokeIntervals.current.shift();
+        let newTypedWords = [...typedWords];
+        let newIndex = currentWordIndex;
+
+        if (isSpace) {
+            // Space pressed: move to next word
+            // BLOCKER: Only advance if the current word is complete (matches length or longer)
+            const targetWord = words[newIndex];
+            const currentTyped = newTypedWords[newIndex];
             
-            // Bot detection: extremely low variance in typing speed (perfect rhythm)
-            if (lastKeystrokeIntervals.current.length === 30) {
-                const avg = lastKeystrokeIntervals.current.reduce((a, b) => a + b) / 30;
-                const variance = lastKeystrokeIntervals.current.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / 30;
-                // If variance is basically zero (e.g., < 1ms spread), it's a bot
-                if (variance < 0.5 && avg > 0) {
-                    isCheatDetected.current = true;
+            if (currentTyped.length === 0) {
+                // Empty word - block spacebar
+                if (inputRef.current) {
+                    inputRef.current.value = ""; 
                 }
+                return;
             }
+
+            // Only advance if something was typed in the current word OR if it's not the first word
+            if (newIndex < words.length - 1) {
+                newIndex++;
+                playClickSound();
+                
+                // Direct input clearing for the next word
+                if (inputRef.current) inputRef.current.value = "";
+                
+                // Reset extra refs for the new active word to prevent caret jumps
+                extraCharRefs.current = [];
+            } else {
+                finishTest();
+                return;
+            }
+        } else {
+            // Regular character or backspace
+            newTypedWords[newIndex] = rawValue;
+            playClickSound();
         }
 
+        setTypedWords(newTypedWords);
+        setCurrentWordIndex(newIndex);
+
+        // Track keystroke time
+        const now = Date.now();
+        const interval = now - lastKeystrokeTime.current;
+        lastKeystrokeIntervals.current.push(interval);
         keystrokeTimes.current.push(now);
         lastKeystrokeTime.current = now;
 
-        // Calculate live stats
+        // Calculate live stats across all words
         let correct = 0;
         let incorrect = 0;
         let extra = 0;
+        let totalTyped = 0;
 
-        for (let i = 0; i < value.length; i++) {
-            if (i < targetText.length) {
-                if (value[i] === targetText[i]) correct++;
-                else incorrect++;
-            } else {
-                extra++;
+        newTypedWords.forEach((typed, idx) => {
+            const target = words[idx];
+            if (!target) return;
+            
+            totalTyped += typed.length;
+            for (let i = 0; i < Math.max(typed.length, target.length); i++) {
+                if (i < target.length) {
+                    if (i < typed.length) {
+                        if (typed[i] === target[i]) correct++;
+                        else incorrect++;
+                    }
+                } else if (i < typed.length) {
+                    extra++;
+                }
             }
-        }
-
-        const missed = Math.max(0, targetText.length - value.length);
-
-        // Trigger error sound if precisely this keystroke introduced an error
-        if (value.length > userInput.length) {
-            const lastCharIdx = value.length - 1;
-            const isError = lastCharIdx >= targetText.length || value[lastCharIdx] !== targetText[lastCharIdx];
-            if (isError) playErrorSound();
-        }
-
-        if (value.length < targetText.length && mode === "words") {
-            // Only relevant for words mode completion
-        }
+        });
 
         const elapsedMs = now - (startTime || now);
         const wpm = calculateWPM(correct, elapsedMs);
-        const rawWpm = calculateWPM(value.length, elapsedMs);
+        const rawWpm = calculateWPM(totalTyped, elapsedMs);
 
         setStats({
             ...stats,
             correctChars: correct,
             incorrectChars: incorrect,
             extraChars: extra,
-            missedChars: missed,
-            totalChars: value.length,
+            totalChars: totalTyped,
             wpm,
             rawWpm,
-            accuracy: value.length > 0 ? Math.round((correct / (correct + incorrect + extra)) * 100) : 100,
-            consistency: stats.consistency, // Consistency calculated during snapshots
-            afk: stats.afk
+            accuracy: totalTyped > 0 ? Math.round((correct / (correct + incorrect + extra)) * 100) : 100,
         });
 
-        if (mode === "words" && value.length >= targetText.length) {
-            // Flag result as unverified if cheat detected
-            if (isCheatDetected.current) {
-                // We'll handle this in the finishTest or save logic
-            }
-            finishTest();
-            setActiveKeys(new Set());
-            setErrorKey(null);
+        // Trigger error sound if error introduced
+        if (!isSpace && rawValue.length > (typedWords[currentWordIndex]?.length || 0)) {
+            const lastIdx = rawValue.length - 1;
+            const target = words[currentWordIndex];
+            const isError = lastIdx >= target.length || rawValue[lastIdx] !== target[lastIdx];
+            if (isError) playErrorSound();
         }
     };
+
 
     const calculateWPM = (correctChars: number, timeMs: number) => {
         const minutes = timeMs / 60000;
@@ -1200,7 +1320,9 @@ export default function MonkeyTypePage() {
         const targetLang = newLang ?? store.language;
 
         generateWords(targetMode, targetConfig, targetLang);
-        setUserInput("");
+        setTypedWords(new Array(targetMode === "words" ? (targetConfig as number) : 300).fill(""));
+        setCurrentWordIndex(0);
+        if (inputRef.current) inputRef.current.value = "";
         setStartTime(null);
         keystrokeTimes.current = [];
         setActiveKeys(new Set());
@@ -1215,6 +1337,7 @@ export default function MonkeyTypePage() {
         setXpResult(null);
         setTimeout(() => inputRef.current?.focus(), 50);
     }, [generateWords, resetLiveState]);
+
     
     useEffect(() => {
         // Reset test when navigating back to home if it was finished
@@ -1292,6 +1415,7 @@ export default function MonkeyTypePage() {
                 { id: 'cherry_blue', label: 'Cherry MX Blue' },
                 { id: 'cherry_brown', label: 'Cherry MX Brown' },
                 { id: 'cherry_red', label: 'Cherry MX Red' },
+                { id: 'nk_creams', label: 'NK Creams' },
                 { id: 'clack', label: 'Clack' },
                 { id: 'tink', label: 'Tink' },
                 { id: 'pop', label: 'Pop' },
@@ -1545,22 +1669,37 @@ export default function MonkeyTypePage() {
                     return next;
                 });
                 setErrorKey(null);
+            } else if (e.key === "Backspace") {
+                // Logic to handle backspacing into previous word if incorrect
+                const currentTyped = typedWordsRef.current[currentWordIndexRef.current] || "";
+                if (currentTyped === "" && currentWordIndexRef.current > 0) {
+                    const prevIdx = currentWordIndexRef.current - 1;
+                    const prevTyped = typedWordsRef.current[prevIdx];
+                    const prevTarget = wordsRefData.current[prevIdx];
+                    if (prevTyped !== prevTarget) {
+                        e.preventDefault();
+                        setCurrentWordIndex(prevIdx);
+                        if (inputRef.current) {
+                            inputRef.current.value = prevTyped;
+                        }
+                    }
+                }
             } else if (!e.ctrlKey && !e.altKey && !e.metaKey && !["Tab", "Enter", "Escape", "Backspace", "Control", "Alt", "Meta"].includes(e.key)) {
                 if (document.activeElement !== inputRef.current) {
                     inputRef.current?.focus();
                 }
 
-                const currentInput = userInputRef.current;
-                const expectedChar = targetText[currentInput.length];
+                const currentTyped = typedWordsRef.current[currentWordIndexRef.current] || "";
+                const expectedWord = wordsRefData.current[currentWordIndexRef.current];
+                const expectedChar = expectedWord?.[currentTyped.length];
                 let isIncorrect = false;
 
                 if (expectedChar === undefined) {
-                    isIncorrect = true;
+                    isIncorrect = true; // Overtyping
                 } else if (language === "english") {
                     if (originalKey.toLowerCase() !== expectedChar.toLowerCase()) isIncorrect = true;
                 } else { // Khmer
                     if (originalKey !== expectedChar) isIncorrect = true;
-                    // Enforce Shift for Space in Khmer
                     if (expectedChar === " " && !e.shiftKey) isIncorrect = true;
                 }
 
@@ -1570,7 +1709,8 @@ export default function MonkeyTypePage() {
                         next.add("space");
                         return next;
                     });
-                    setErrorKey(isIncorrect ? "space" : null);
+                    // In Monkeytype, space marks the word as done.
+                    setErrorKey(null);
                 } else {
                     let matchedQwerty = key;
                     for (const [qKey, chars] of Object.entries(KHMER_KEY_MAP)) {
@@ -1587,6 +1727,7 @@ export default function MonkeyTypePage() {
                     setErrorKey(isIncorrect ? matchedQwerty : null);
                 }
             }
+
 
             if (document.activeElement !== inputRef.current && !["Tab", "Enter", "Escape", "Shift", "Control", "Alt", "Meta"].includes(e.key)) {
                 inputRef.current?.focus();
@@ -1641,7 +1782,8 @@ export default function MonkeyTypePage() {
             window.removeEventListener("keyup", handleGlobalKeyUp);
             window.removeEventListener("keyup", handleTabKeyUp);
         };
-    }, [isSearchOpen, filteredCommands, selectedIndex, language, isFinished, resetTest, setIsWrongKeyboardLayout, targetText]);
+    }, [isSearchOpen, filteredCommands, selectedIndex, language, isFinished, resetTest, setIsWrongKeyboardLayout, words, typedWords, currentWordIndex]);
+
 
     // Caret and 3-Line Shifting Logic
     // Split target text into visual grapheme clusters to avoid broken combining characters in Khmer
@@ -1704,50 +1846,80 @@ export default function MonkeyTypePage() {
     }, [clusters]);
 
     useEffect(() => {
-        if (userInput.length === 0) {
-            if (charRefs.current[0] && wordsRef.current) {
-                const charRect = charRefs.current[0].getBoundingClientRect();
+        const currentTyped = typedWords[currentWordIndex] || "";
+        const currentWordGroup = wordGroups[currentWordIndex];
+        
+        if (!currentWordGroup) return;
+
+        // Find the active cluster relative to this word
+        let activeClusterIndexInWord = 0;
+        let runningLength = 0;
+        for (let i = 0; i < currentWordGroup.length; i++) {
+            const clusterIdx = currentWordGroup[i];
+            const cluster = clusters[clusterIdx];
+            if (currentTyped.length >= runningLength) {
+                activeClusterIndexInWord = i;
+            }
+            runningLength += cluster.length;
+        }
+
+        const globalClusterIdx = currentWordGroup[activeClusterIndexInWord];
+        
+        const targetLen = words[currentWordIndex]?.length || 0;
+        const currentLen = currentTyped.length;
+
+        // Handle caret position for overtyping
+        if (currentLen > targetLen) {
+            const extraIdx = currentLen - targetLen - 1;
+            const extraEl = extraCharRefs.current[extraIdx];
+            if (extraEl && wordsRef.current) {
+                const rect = extraEl.getBoundingClientRect();
                 const containerRect = wordsRef.current.getBoundingClientRect();
                 setCaretPos({
-                    top: charRect.top - containerRect.top,
-                    left: charRect.left - containerRect.left
+                    top: rect.top - containerRect.top + lineOffset,
+                    left: rect.right - containerRect.left
                 });
-            } else {
-                setCaretPos({ top: 0, left: 0 });
+                return;
             }
-            setLineOffset(0);
-            return;
+        } else if (currentLen === targetLen && targetLen > 0) {
+            // End of word - position caret after the last character
+            const lastClusterIdx = currentWordGroup[currentWordGroup.length - 1];
+            const lastCharEl = charRefs.current[lastClusterIdx];
+            if (lastCharEl && wordsRef.current) {
+                const rect = lastCharEl.getBoundingClientRect();
+                const containerRect = wordsRef.current.getBoundingClientRect();
+                setCaretPos({
+                    top: rect.top - containerRect.top + lineOffset,
+                    left: rect.right - containerRect.left
+                });
+                return;
+            }
         }
 
-        // Find the active cluster based on the user's current input length
-        let activeClusterIndex = 0;
-        for (let i = 0; i < clusterIndexes.length; i++) {
-            if (userInput.length >= clusterIndexes[i]) {
-                activeClusterIndex = i;
-            } else {
-                break;
-            }
-        }
-
-        const activeCharElement = charRefs.current[activeClusterIndex];
+        // Start of word or middle of word
+        const activeCharElement = charRefs.current[globalClusterIdx];
         if (activeCharElement && wordsRef.current) {
             const charRect = activeCharElement.getBoundingClientRect();
             const containerRect = wordsRef.current.getBoundingClientRect();
 
             const lineHeightVal = language === "khmer" ? 58 : (fontSize * 1.6);
+            
+            // Direct immediate position update
             setCaretPos({
                 top: charRect.top - containerRect.top + lineOffset,
                 left: charRect.left - containerRect.left
             });
 
-            // Smart 3-line scroll logic: shift when we enter the 3rd line
+            // Proactive Scrolling
             const relativeTop = charRect.top - containerRect.top + lineOffset;
-            const scrollThreshold = lineHeightVal * 1.5;
-            if (relativeTop > scrollThreshold) {
+            if (relativeTop > lineHeightVal * 1.1) {
                 setLineOffset(prev => prev - lineHeightVal);
+            } else if (relativeTop < 0 && currentWordIndex > 0) {
+                setLineOffset(prev => prev + lineHeightVal);
             }
         }
-    }, [userInput, words, clusters, clusterIndexes, lineOffset, fontSize, language]);
+    }, [typedWords, currentWordIndex, wordGroups, clusters, lineOffset, fontSize, language, words, charRefs, extraCharRefs]);
+
 
     if (!hasMounted) {
         return (
@@ -1766,7 +1938,7 @@ export default function MonkeyTypePage() {
             className={cn(
                 "flex-1 w-full flex flex-col items-center justify-between overflow-hidden select-none theme-transition",
                 "pt-1 sm:pt-1.5 md:pt-3 px-[var(--content-px)] pb-1 sm:pb-2 md:pb-4",
-                language === "khmer" ? "font-sans font-medium" : "font-mono"
+                language === "khmer" ? "font-sans font-medium" : "font-roboto"
             )}
             onClick={() => {
                 if (isFocused) {
@@ -1974,25 +2146,26 @@ export default function MonkeyTypePage() {
                                     )}
                                 </AnimatePresence>
 
-                                <div className="h-8 flex justify-start items-center gap-4 px-1 sm:px-4">
-                                    {isActive && (
+                                <div className="h-10 flex justify-start items-center gap-6 px-1 sm:px-4">
+                                    {(isActive || isFinished) && (
                                         <>
-                                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-3xl font-bold transition-colors duration-500" style={{ color: activeTheme.primary }}>
-                                                {mode === "time" ? timeLeft : `${userInput.split(" ").length - 1}/${config}`}
-                                            </motion.div>
+                                            <div className="text-3xl font-bold transition-colors duration-500" style={{ color: activeTheme.primary }}>
+                                                {mode === "time" ? timeLeft : `${currentWordIndex}/${config}`}
+                                            </div>
                                             {showLiveWpm && stats.wpm > 0 && (
-                                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 0.8 }} className="text-xl font-bold transition-colors duration-500" style={{ color: activeTheme.text }}>
-                                                    {stats.wpm} wpm
-                                                </motion.div>
+                                                <div className="text-xl font-bold transition-colors duration-500" style={{ color: activeTheme.text }}>
+                                                    {stats.wpm} <span className="text-xs opacity-50 uppercase tracking-widest">wpm</span>
+                                                </div>
                                             )}
                                             {showLiveAccuracy && stats.accuracy > 0 && (
-                                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 0.5 }} className="text-lg font-bold transition-colors duration-500" style={{ color: activeTheme.textDim }}>
-                                                    {stats.accuracy}%
-                                                </motion.div>
+                                                <div className="text-xl font-bold transition-colors duration-500" style={{ color: activeTheme.textDim }}>
+                                                    {stats.accuracy}<span className="text-xs opacity-50">%</span>
+                                                </div>
                                             )}
                                         </>
                                     )}
                                 </div>
+
 
                                 {/* 3-Line Typing Window */}
                                 <div
@@ -2016,7 +2189,7 @@ export default function MonkeyTypePage() {
                                     >
                                         <motion.div
                                             animate={{ y: lineOffset }}
-                                            transition={userInput.length === 0 ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 30 }}
+                                            transition={(typedWords[0]?.length || 0) === 0 ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 30 }}
                                             ref={wordsRef}
                                             className="relative tracking-tight"
                                             style={{
@@ -2027,17 +2200,26 @@ export default function MonkeyTypePage() {
                                         >
                                             {/* Smooth Caret */}
                                             <motion.div
-                                                animate={{ top: caretPos.top, left: caretPos.left }}
-                                                transition={userInput.length === 0 ? { duration: 0 } : { type: "spring", stiffness: 500, damping: 35 }}
+                                                initial={{ opacity: 1 }}
+                                                animate={{ 
+                                                    top: caretPos.top, 
+                                                    left: caretPos.left,
+                                                    opacity: isActive ? 1 : [1, 0, 1] 
+                                                }}
+                                                transition={{
+                                                    top: (typedWords[0]?.length || 0) === 0 ? { duration: 0 } : { type: "tween", duration: 0.1, ease: "linear" },
+                                                    left: (typedWords[0]?.length || 0) === 0 ? { duration: 0 } : { type: "tween", duration: 0.1, ease: "linear" },
+                                                    opacity: { duration: 1, repeat: Infinity, ease: "easeInOut" }
+                                                }}
                                                 className={cn(
                                                     "absolute w-[2.5px] rounded-full z-10 pointer-events-none will-change-transform",
                                                     !isActive && "caret-idle"
                                                 )}
                                                 style={{
                                                     backgroundColor: 'var(--mt-primary)',
-                                                    height: language === "khmer" ? '34px' : `${fontSize * 1.1}px`,
-                                                    marginTop: language === "khmer" ? '6px' : `${fontSize * 0.25}px`,
-                                                    transition: 'all 0.1s ease',
+                                                    height: language === "khmer" ? '34px' : `${fontSize * 1.2}px`,
+                                                    marginTop: language === "khmer" ? '6px' : `${fontSize * 0.2}px`,
+                                                    boxShadow: `0 0 10px var(--mt-primary)40`,
                                                 }}
                                             />
 
@@ -2078,13 +2260,8 @@ export default function MonkeyTypePage() {
                                             {/* Words Grid */}
                                             <div className={cn("flex flex-wrap w-full", language === "khmer" ? "font-hanuman" : "")}>
                                                 {wordGroups.map((group, groupIdx) => {
-                                                    const wordStart = clusterIndexes[group[0]];
-                                                    const wordEnd = clusterIndexes[group[group.length - 1]] + clusters[group[group.length - 1]].length;
-
-                                                    // Only pass the relevant slice of userInput to the Word component.
-                                                    // This ensures only the word currently being typed re-renders.
-                                                    const wordUserInput = userInput.substring(wordStart, Math.min(userInput.length, wordEnd));
-                                                    const wordTargetText = targetText.substring(wordStart, wordEnd);
+                                                    const wordTyped = typedWords[groupIdx] || "";
+                                                    const wordTarget = words[groupIdx] || "";
 
                                                     return (
                                                         <Word
@@ -2092,20 +2269,25 @@ export default function MonkeyTypePage() {
                                                             group={group}
                                                             clusters={clusters}
                                                             clusterIndexes={clusterIndexes}
-                                                            wordUserInput={wordUserInput}
-                                                            wordTargetText={wordTargetText}
+                                                            typedWord={wordTyped}
+                                                            targetWord={wordTarget}
+                                                            isActive={groupIdx === currentWordIndex}
+                                                            isFinished={groupIdx < currentWordIndex}
                                                             charRefs={charRefs}
+                                                            extraCharRefs={extraCharRefs}
                                                             themeColors={activeTheme}
+                                                            language={language}
                                                         />
                                                     );
                                                 })}
                                             </div>
+
                                         </motion.div>
 
                                         <input
                                             ref={inputRef}
                                             type="text"
-                                            value={userInput}
+                                            defaultValue=""
                                             onChange={handleInputChange}
                                             onPaste={(e) => e.preventDefault()}
                                             onFocus={() => {
@@ -2125,6 +2307,7 @@ export default function MonkeyTypePage() {
                                             spellCheck={false}
                                             autoComplete="off"
                                         />
+
                                     </div>
 
                                     {/* Focus-lost overlay — now INSIDE the typing window for clipping */}
@@ -2170,44 +2353,42 @@ export default function MonkeyTypePage() {
                                 >
                                     {(() => {
                                         // Always show next key to press, updating as the user types
-                                        const remainingTarget = targetText.slice(userInput.length);
+                                        const currentWord = words[currentWordIndex] || "";
+                                        const currentTyped = typedWords[currentWordIndex] || "";
+                                        const remainingTarget = currentWord.slice(currentTyped.length);
+                                        
                                         let nextKey: string | null = null;
                                         let needsShift = false;
 
                                         if (remainingTarget) {
                                             if (language === "khmer") {
-                                                if (remainingTarget.startsWith(" ")) {
-                                                    nextKey = "space";
-                                                    needsShift = true;
-                                                } else {
-                                                    for (const [qKey, m] of Object.entries(KHMER_KEY_MAP)) {
-                                                        if (remainingTarget.startsWith(m.base)) {
-                                                            nextKey = qKey;
-                                                            needsShift = false;
-                                                            break;
-                                                        }
-                                                        if (remainingTarget.startsWith(m.shift)) {
-                                                            nextKey = qKey;
-                                                            needsShift = true;
-                                                            break;
-                                                        }
+                                                for (const [qKey, m] of Object.entries(KHMER_KEY_MAP)) {
+                                                    if (remainingTarget.startsWith(m.base)) {
+                                                        nextKey = qKey;
+                                                        needsShift = false;
+                                                        break;
+                                                    }
+                                                    if (remainingTarget.startsWith(m.shift)) {
+                                                        nextKey = qKey;
+                                                        needsShift = true;
+                                                        break;
                                                     }
                                                 }
                                             } else {
                                                 const char = remainingTarget[0];
-                                                if (char === " ") {
-                                                    nextKey = "space";
-                                                } else if (char) {
-                                                    const baseKey = ENGLISH_BASE_MAP[char] || char.toLowerCase();
-                                                    for (const row of KEYBOARD_ROWS) {
-                                                        if (row.includes(baseKey)) {
-                                                            nextKey = baseKey;
-                                                            break;
-                                                        }
+                                                const baseKey = ENGLISH_BASE_MAP[char] || char.toLowerCase();
+                                                for (const row of KEYBOARD_ROWS) {
+                                                    if (row.includes(baseKey)) {
+                                                        nextKey = baseKey;
+                                                        break;
                                                     }
-                                                    needsShift = /[A-Z!@#$%^&*()_+{}|:"<>?]/.test(char);
                                                 }
+                                                needsShift = /[A-Z!@#$%^&*()_+{}|:"<>?]/.test(char);
                                             }
+                                        } else {
+                                            // Word is complete, next is space
+                                            nextKey = "space";
+                                            needsShift = language === "khmer";
                                         }
 
                                         const nextKeyData = { key: nextKey, needsShift };
@@ -2222,6 +2403,7 @@ export default function MonkeyTypePage() {
                                             />
                                         );
                                     })()}
+
                                 </div>
 
 
