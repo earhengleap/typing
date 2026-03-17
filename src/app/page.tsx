@@ -485,7 +485,7 @@ export default function MonkeyTypePage() {
             
             // Use overrideVolume if provided, otherwise use global soundVolume
             const effectiveVolume = overrideVolume !== undefined ? overrideVolume : soundVolume;
-            masterGain.gain.setValueAtTime(effectiveVolume * 2.0, audioCtx.currentTime); // Scaled volume
+            masterGain.gain.setValueAtTime(effectiveVolume * 6.0, audioCtx.currentTime); // Scaled volume
 
             const now = audioCtx.currentTime;
 
@@ -733,7 +733,7 @@ export default function MonkeyTypePage() {
             const audioCtx = new AudioContextClass();
             const g = audioCtx.createGain();
             g.connect(audioCtx.destination);
-            g.gain.setValueAtTime(soundVolume * 1.5, audioCtx.currentTime);
+            g.gain.setValueAtTime(soundVolume * 4.5, audioCtx.currentTime);
             const now = audioCtx.currentTime;
 
             // Synthesis definitions for different error types
@@ -844,7 +844,7 @@ export default function MonkeyTypePage() {
             const audioCtx = new AudioContextClass();
             const g = audioCtx.createGain();
             g.connect(audioCtx.destination);
-            g.gain.setValueAtTime(soundVolume * 0.15, audioCtx.currentTime);
+            g.gain.setValueAtTime(soundVolume * 0.5, audioCtx.currentTime);
             const now = audioCtx.currentTime;
 
             const playNote = (freq: number, start: number) => {
