@@ -98,9 +98,11 @@ interface MonkeyTypeState {
     soundOnError: boolean | string;
     playTimeWarning: boolean | string | number;
     showLiveTimer: boolean;
+    showKeyboard: boolean;
     setShowLiveWpm: (v: boolean) => void;
     setShowLiveAccuracy: (v: boolean) => void;
     setShowLiveTimer: (v: boolean) => void;
+    setShowKeyboard: (v: boolean) => void;
     setSoundEnabled: (v: boolean) => void;
     setFontSize: (v: number) => void;
     setFontFamily: (v: string) => void;
@@ -211,6 +213,7 @@ export const useMonkeyTypeStore = create<MonkeyTypeState>()(
             showLiveWpm: true,
             showLiveAccuracy: true,
             showLiveTimer: true,
+            showKeyboard: true,
             fontSize: 24,
             fontFamily: 'monospace',
             soundType: 'mechanical',
@@ -221,6 +224,7 @@ export const useMonkeyTypeStore = create<MonkeyTypeState>()(
             setShowLiveWpm: (v) => set({ showLiveWpm: v }),
             setShowLiveAccuracy: (v) => set({ showLiveAccuracy: v }),
             setShowLiveTimer: (v) => set({ showLiveTimer: v }),
+            setShowKeyboard: (v) => set({ showKeyboard: v }),
             setSoundEnabled: (v) => set({ soundEnabled: v }),
             setFontSize: (v) => set({ fontSize: v }),
             setFontFamily: (v) => set({ fontFamily: v }),
@@ -268,6 +272,7 @@ export const useMonkeyTypeStore = create<MonkeyTypeState>()(
                 showLiveWpm: state.showLiveWpm,
                 showLiveAccuracy: state.showLiveAccuracy,
                 showLiveTimer: state.showLiveTimer,
+                showKeyboard: state.showKeyboard,
                 fontSize: state.fontSize,
                 fontFamily: state.fontFamily,
                 soundType: state.soundType,

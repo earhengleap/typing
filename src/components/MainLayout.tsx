@@ -12,6 +12,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     const activeTheme = THEMES[themeName] || THEMES.codex;
     const pathname = usePathname();
 
+
     // Check if current route is an admin route or auth page
     const isAdminRoute = pathname.startsWith("/admin");
     const isAuthPage = pathname === "/login" || pathname === "/reset-password";

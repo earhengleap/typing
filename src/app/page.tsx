@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { RotateCcw, Timer, Type, Globe, Zap, MousePointer2, Lock, Search, Music, Volume2, VolumeX, Bell, Check, Palette, Star, Terminal } from "lucide-react";
+import { RotateCcw, Timer, Type, Globe, Zap, MousePointer2, Lock, Search, Music, Volume2, VolumeX, Bell, Check, Palette, Star, Terminal, Keyboard as LucideKeyboard } from "lucide-react";
 import { AuthenticCrown } from "@/components/icons/AuthenticCrown";
 import { AuthenticKeyboard } from "@/components/icons/AuthenticKeyboard";
 import { cn } from "@/lib/utils";
@@ -465,9 +465,9 @@ Keyboard.displayName = "Keyboard";
 export default function MonkeyTypePage() {
     const {
         mode, config, language, theme, stats, chartData, timeLeft, isActive, isFinished, isWrongKeyboardLayout,
-        soundEnabled, showLiveWpm, showLiveAccuracy, fontSize, fontFamily, soundType, soundVolume, soundOnError, playTimeWarning, favoriteThemes,
+        soundEnabled, showLiveWpm, showLiveAccuracy, showKeyboard, fontSize, fontFamily, soundType, soundVolume, soundOnError, playTimeWarning, favoriteThemes,
         setIsActive, setIsFinished, setTimeLeft, setStats, setChartData, resetLiveState, addHistory,
-        setMode, setConfig, setLanguage, setTheme, setIsWrongKeyboardLayout, setSettings, toggleFavoriteTheme,
+        setMode, setConfig, setLanguage, setTheme, setIsWrongKeyboardLayout, setShowKeyboard, setSettings, toggleFavoriteTheme,
         isSearchOpen, setIsSearchOpen, searchQuery, setSearchQuery, selectedIndex, setSelectedIndex, activeCommandGroup, setActiveCommandGroup,
         punctuation, numbers, setPunctuation, setNumbers
     } = useMonkeyTypeStore();
@@ -485,7 +485,7 @@ export default function MonkeyTypePage() {
             
             // Use overrideVolume if provided, otherwise use global soundVolume
             const effectiveVolume = overrideVolume !== undefined ? overrideVolume : soundVolume;
-            masterGain.gain.setValueAtTime(effectiveVolume * 0.2, audioCtx.currentTime); // Scaled volume
+            masterGain.gain.setValueAtTime(effectiveVolume * 2.0, audioCtx.currentTime); // Scaled volume
 
             const now = audioCtx.currentTime;
 
@@ -621,7 +621,7 @@ export default function MonkeyTypePage() {
                 }
                 case 'nk_creams': {
                     const audio = new Audio(NK_CREAMS_SOUNDS[Math.floor(Math.random() * NK_CREAMS_SOUNDS.length)]);
-                    audio.volume = effectiveVolume * 0.4;
+                    audio.volume = Math.min(1.0, effectiveVolume * 1.5);
                     audio.play().catch(() => {});
                     break;
                 }
@@ -733,7 +733,7 @@ export default function MonkeyTypePage() {
             const audioCtx = new AudioContextClass();
             const g = audioCtx.createGain();
             g.connect(audioCtx.destination);
-            g.gain.setValueAtTime(soundVolume * 0.1, audioCtx.currentTime);
+            g.gain.setValueAtTime(soundVolume * 1.5, audioCtx.currentTime);
             const now = audioCtx.currentTime;
 
             // Synthesis definitions for different error types
@@ -1368,25 +1368,25 @@ export default function MonkeyTypePage() {
 
         if (!activeCommandGroup) {
             // Main Menu
-            list.push({ id: "action-restart", label: "Restart Test", category: "Action", action: () => resetTest() });
+            list.push({ id: "action-restart", label: "Restart Test", category: "Action", icon: <RotateCcw className="w-4 h-4 opacity-70" />, action: () => resetTest() });
 
             // Configuration Groups
-            list.push({ id: "group-sound-click", label: "Sound on Click...", category: "Sound", action: () => { setActiveCommandGroup('sound-click'); setSelectedIndex(0); setSearchQuery(""); } });
-            list.push({ id: "group-sound-volume", label: "Sound on Volume...", category: "Sound", action: () => { setActiveCommandGroup('sound-volume'); setSelectedIndex(0); setSearchQuery(""); } });
-            list.push({ id: "group-sound-error", label: "Sound on Error...", category: "Sound", action: () => { setActiveCommandGroup('sound-error'); setSelectedIndex(0); setSearchQuery(""); } });
-            list.push({ id: "group-time-warning", label: "Play Time Warning...", category: "Sound", action: () => { setActiveCommandGroup('time-warning'); setSelectedIndex(0); setSearchQuery(""); } });
+            list.push({ id: "group-sound-click", label: "Sound on Click...", category: "Sound", icon: <Music className="w-4 h-4 opacity-70" />, action: () => { setActiveCommandGroup('sound-click'); setSelectedIndex(0); setSearchQuery(""); } });
+            list.push({ id: "group-sound-volume", label: "Sound on Volume...", category: "Sound", icon: <Volume2 className="w-4 h-4 opacity-70" />, action: () => { setActiveCommandGroup('sound-volume'); setSelectedIndex(0); setSearchQuery(""); } });
+            list.push({ id: "group-sound-error", label: "Sound on Error...", category: "Sound", icon: <VolumeX className="w-4 h-4 opacity-70" />, action: () => { setActiveCommandGroup('sound-error'); setSelectedIndex(0); setSearchQuery(""); } });
+            list.push({ id: "group-time-warning", label: "Play Time Warning...", category: "Sound", icon: <Bell className="w-4 h-4 opacity-70" />, action: () => { setActiveCommandGroup('time-warning'); setSelectedIndex(0); setSearchQuery(""); } });
 
             // Core Settings
-            list.push({ id: "mode-time", label: "Time Mode", category: "Mode", action: () => { setMode("time"); setConfig(30); resetTest(); setIsSearchOpen(false); } });
-            list.push({ id: "mode-words", label: "Words Mode", category: "Mode", action: () => { setMode("words"); setConfig(25); resetTest(); setIsSearchOpen(false); } });
+            list.push({ id: "mode-time", label: "Time Mode", category: "Mode", icon: <Timer className="w-4 h-4 opacity-70" />, action: () => { setMode("time"); setConfig(30); resetTest(); setIsSearchOpen(false); } });
+            list.push({ id: "mode-words", label: "Words Mode", category: "Mode", icon: <Type className="w-4 h-4 opacity-70" />, action: () => { setMode("words"); setConfig(25); resetTest(); setIsSearchOpen(false); } });
 
             // Languages
-            list.push({ id: "lang-en", label: "English", category: "Language", action: () => { setLanguage("english"); resetTest(); setIsSearchOpen(false); } });
-            list.push({ id: "lang-km", label: "Khmer", category: "Language", action: () => { setLanguage("khmer"); resetTest(); setIsSearchOpen(false); } });
+            list.push({ id: "lang-en", label: "English", category: "Language", icon: <Globe className="w-4 h-4 opacity-70" />, action: () => { setLanguage("english"); resetTest(); setIsSearchOpen(false); } });
+            list.push({ id: "lang-km", label: "Khmer", category: "Language", icon: <Globe className="w-4 h-4 opacity-70" />, action: () => { setLanguage("khmer"); resetTest(); setIsSearchOpen(false); } });
 
             // Themes
             list.push({ id: "group-theme-select", label: "Theme...", category: "Theme", icon: <Palette className="w-4 h-4 opacity-70" />, action: () => { setActiveCommandGroup('theme-select'); setSelectedIndex(0); setSearchQuery(""); } });
-            list.push({ id: "action-theme-custom", label: "Custom theme...", category: "Theme", action: () => { setIsSearchOpen(false); } });
+            list.push({ id: "action-theme-custom", label: "Custom theme...", category: "Theme", icon: <Palette className="w-4 h-4 opacity-70" />, action: () => { setIsSearchOpen(false); } });
             
             const isFav = favoriteThemes.includes(theme);
             list.push({ 
@@ -1401,12 +1401,30 @@ export default function MonkeyTypePage() {
                 id: "action-theme-random", 
                 label: "Random theme...", 
                 category: "Theme", 
+                icon: <Zap className="w-4 h-4 opacity-70" />,
                 action: () => { 
                     const themeKeys = Object.keys(THEMES) as Theme[];
                     const randomTheme = themeKeys[Math.floor(Math.random() * themeKeys.length)];
                     setTheme(randomTheme); 
                     setIsSearchOpen(false); 
                 } 
+            });
+
+            list.push({ 
+                id: "keyboard-mode-on", 
+                label: "Keyboard mode > on", 
+                category: "Action", 
+                icon: <LucideKeyboard className="w-4 h-4 opacity-70" />,
+                isActive: showKeyboard === true,
+                action: () => { setShowKeyboard(true); setIsSearchOpen(false); } 
+            });
+            list.push({ 
+                id: "keyboard-mode-off", 
+                label: "Keyboard mode > off", 
+                category: "Action", 
+                icon: <LucideKeyboard className="w-4 h-4 opacity-70" />,
+                isActive: showKeyboard === false,
+                action: () => { setShowKeyboard(false); setIsSearchOpen(false); } 
             });
         } else if (activeCommandGroup === 'sound-click') {
             // Click Sounds Sub-menu
@@ -1521,7 +1539,7 @@ export default function MonkeyTypePage() {
         }
 
         return list;
-    }, [activeCommandGroup, soundOnError, playTimeWarning, resetTest, setSettings, setTheme, setMode, setConfig, setLanguage, language, favoriteThemes, theme, toggleFavoriteTheme]);
+    }, [activeCommandGroup, soundOnError, playTimeWarning, resetTest, setSettings, setTheme, setMode, setConfig, setLanguage, language, favoriteThemes, theme, toggleFavoriteTheme, showKeyboard, setShowKeyboard]);
 
     const filteredCommands = useMemo(() => {
         const q = searchQuery.toLowerCase().trim();
@@ -1923,7 +1941,7 @@ export default function MonkeyTypePage() {
 
     if (!hasMounted) {
         return (
-            <div className="min-h-screen theme-transition flex flex-col items-center justify-center" style={{ backgroundColor: THEMES.codex.bg }} suppressHydrationWarning>
+            <div className="min-h-screen theme-transition flex flex-col items-center justify-center transition-colors duration-500" style={{ backgroundColor: THEMES.codex.bg }} suppressHydrationWarning>
                 {/* Minimal loader or skeleton while hydrating */}
                 <div className="flex items-center gap-2" suppressHydrationWarning>
                     <Type className="w-8 h-8 animate-pulse" style={{ color: THEMES.codex.primary }} />
@@ -1964,33 +1982,27 @@ export default function MonkeyTypePage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-start justify-center pt-24 bg-black/40 backdrop-blur-sm px-4"
+                        className="fixed inset-0 z-[100] flex items-start justify-center backdrop-blur-[2px] px-4 pt-[110px]"
+                        style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
                         onClick={() => setIsSearchOpen(false)}
                     >
                         <motion.div
-                            initial={{ scale: 0.95, y: -20 }}
-                            animate={{ scale: 1, y: 0 }}
-                            exit={{ scale: 0.95, y: -20 }}
-                            transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                            className="w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden flex flex-col border border-white/10"
+                            initial={{ opacity: 0, scale: 0.98 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.98 }}
+                            transition={{ duration: 0.1, ease: "easeOut" }}
+                            className="w-full max-w-[600px] rounded-[8px] overflow-hidden flex flex-col shadow-2xl"
                             style={{ backgroundColor: activeTheme.bg }}
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <div className="flex items-center px-4 border-b border-white/5" style={{ backgroundColor: activeTheme.bgAlt }}>
-                                <Search className="w-5 h-5 opacity-50 shrink-0" style={{ color: activeTheme.text }} />
+                            <div className="flex items-center px-6 py-4">
+                                <Search className="w-5 h-5 mr-3 shrink-0" style={{ color: activeTheme.textDim, opacity: 0.5 }} />
                                 <input
                                     ref={searchInputRef}
                                     type="text"
-                                    placeholder={
-                                        activeCommandGroup === 'sound-click' ? 'Sound on click...' : 
-                                        activeCommandGroup === 'sound-volume' ? 'Sound volume...' : 
-                                        activeCommandGroup === 'sound-error' ? 'Sound error...' : 
-                                        activeCommandGroup === 'time-warning' ? 'Play time warning...' : 
-                                        activeCommandGroup === 'theme-select' ? 'Search themes...' : 
-                                        'Search commands...'
-                                    }
-                                    className="w-full bg-transparent border-none outline-none py-4 px-3 text-lg placeholder-white/20"
-                                    style={{ color: activeTheme.text }}
+                                    placeholder="type to search"
+                                    className="w-full bg-transparent border-none outline-none py-1 text-base placeholder-current font-mono"
+                                    style={{ color: activeTheme.text, opacity: searchQuery ? 1 : 0.5 }}
                                     value={searchQuery}
                                     onChange={(e) => { setSearchQuery(e.target.value); setSelectedIndex(0); }}
                                     onKeyDown={(e) => {
@@ -2003,18 +2015,12 @@ export default function MonkeyTypePage() {
                                         }
                                     }}
                                 />
-                                <span className="text-xs opacity-50 px-2 py-1 rounded bg-black/20 shrink-0" style={{ color: activeTheme.textDim }}>ESC</span>
                             </div>
-                            <div className="max-h-[60vh] overflow-y-auto py-2 custom-scrollbar">
+                            <div className="max-h-[60vh] overflow-y-auto pb-8 custom-scrollbar">
                                 {searchQuery.trim() === '' && !activeCommandGroup ? (
-                                    <div className="px-6 py-10 text-center space-y-4">
-                                        <div className="text-sm opacity-40" style={{ color: activeTheme.textDim }}>
+                                    <div className="px-8 py-4 opacity-50" style={{ color: activeTheme.textDim }}>
+                                        <div className="text-sm">
                                             Type to search commands
-                                        </div>
-                                        <div className="flex flex-wrap gap-2 justify-center text-[10px] font-mono opacity-30" style={{ color: activeTheme.textDim }}>
-                                            {['theme', 'mode', 'language', 'time', 'restart'].map(hint => (
-                                                <span key={hint} className="px-2 py-1 rounded" style={{ backgroundColor: activeTheme.bgAlt }}>{hint}</span>
-                                            ))}
                                         </div>
                                     </div>
                                 ) : filteredCommands.length === 0 ? (
@@ -2043,36 +2049,40 @@ export default function MonkeyTypePage() {
                                             }}
                                             onMouseEnter={() => setSelectedIndex(i)}
                                             className={cn(
-                                                "px-6 py-3 flex items-center justify-between cursor-pointer transition-colors duration-150",
-                                                i === selectedIndex ? "bg-white/5" : ""
+                                                "px-8 py-2 flex items-center justify-between cursor-pointer transition-all duration-75",
+                                                i === selectedIndex ? "bg-opacity-10" : "bg-transparent"
                                             )}
-                                            style={{ color: i === selectedIndex ? activeTheme.primary : activeTheme.text }}
+                                            style={{ 
+                                                backgroundColor: i === selectedIndex ? activeTheme.primary : 'transparent',
+                                                color: i === selectedIndex ? activeTheme.bg : activeTheme.textDim,
+                                                opacity: i === selectedIndex ? 1 : 0.6
+                                            }}
                                         >
-                                            <div className="flex items-center gap-3">
-                                                {cmd.category === 'Theme' && (
-                                                    <div className="flex gap-1">
-                                                        {(() => {
-                                                            const t = THEMES[cmd.id.replace('theme-', '') as Theme];
-                                                            return t ? (
-                                                                <>
-                                                                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: t.bg, border: `1px solid ${t.textDim}` }} />
-                                                                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: t.primary }} />
-                                                                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: t.text }} />
-                                                                </>
-                                                            ) : null;
-                                                        })()}
-                                                    </div>
-                                                )}
-                                                {cmd.icon && cmd.icon}
-                                                <span className="font-semibold">{cmd.label}</span>
-                                                {cmd.category === 'Theme' && theme === cmd.id.replace('theme-', '') && (
-                                                    <span className="text-[10px] px-1.5 py-0.5 rounded font-bold" style={{ backgroundColor: activeTheme.primary, color: activeTheme.bg }}>active</span>
-                                                )}
+                                            <div className="flex items-center gap-4">
+                                                <div className="flex items-center justify-center w-6 shrink-0">
+                                                    {cmd.icon ? (
+                                                        React.cloneElement(cmd.icon as any, { size: 16, className: cn((cmd.icon as any).props.className, "shrink-0") })
+                                                    ) : (
+                                                        cmd.category === 'Theme' && (
+                                                            <div className="flex gap-1">
+                                                                {(() => {
+                                                                    const t = THEMES[cmd.id.replace('theme-', '') as Theme];
+                                                                    return t ? (
+                                                                        <>
+                                                                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: t.primary }} />
+                                                                        </>
+                                                                    ) : null;
+                                                                })()}
+                                                            </div>
+                                                        )
+                                                    )}
+                                                </div>
+                                                <span className="text-sm font-bold">{cmd.label}</span>
                                                 {cmd.isActive && (
-                                                    <Check className="w-4 h-4 opacity-80" style={{ color: activeTheme.primary }} />
+                                                    <Check className="w-4 h-4 ml-1" />
                                                 )}
                                             </div>
-                                            <span className="text-xs px-2 py-1 rounded-full opacity-60" style={{ backgroundColor: activeTheme.bgAlt }}>
+                                            <span className="text-[10px] opacity-30 uppercase tracking-[0.1em] font-black">
                                                 {cmd.category}
                                             </span>
                                         </div>
@@ -2351,7 +2361,7 @@ export default function MonkeyTypePage() {
                                         inputRef.current?.focus();
                                     }}
                                 >
-                                    {(() => {
+                                    {showKeyboard && (() => {
                                         // Always show next key to press, updating as the user types
                                         const currentWord = words[currentWordIndex] || "";
                                         const currentTyped = typedWords[currentWordIndex] || "";
