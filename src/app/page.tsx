@@ -2149,16 +2149,22 @@ export default function MonkeyTypePage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[100] flex items-start justify-center backdrop-blur-[2px] px-4 pt-[110px]"
-                        style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+                        transition={{ duration: 0.2 }}
+                        className="fixed inset-0 z-[100] flex items-start justify-center backdrop-blur-[4px] px-4 pt-[110px]"
+                        style={{ backgroundColor: 'rgba(0,0,0,0.65)' }}
                         onClick={() => setIsSearchOpen(false)}
                     >
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.98 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.98 }}
-                            transition={{ duration: 0.1, ease: "easeOut" }}
-                            className="w-full max-w-[600px] rounded-[8px] overflow-hidden flex flex-col shadow-2xl"
+                            initial={{ opacity: 0, scale: 0.95, y: -20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: -20 }}
+                            transition={{ 
+                                type: "spring", 
+                                stiffness: 400, 
+                                damping: 30, 
+                                mass: 0.8 
+                            }}
+                            className="w-full max-w-[600px] rounded-[12px] overflow-hidden flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/5"
                             style={{ backgroundColor: activeTheme.bg }}
                             onClick={(e) => e.stopPropagation()}
                         >
@@ -2216,13 +2222,12 @@ export default function MonkeyTypePage() {
                                             }}
                                             onMouseEnter={() => setSelectedIndex(i)}
                                             className={cn(
-                                                "px-8 py-2 flex items-center justify-between cursor-pointer transition-all duration-75",
-                                                i === selectedIndex ? "bg-opacity-10" : "bg-transparent"
+                                                "px-8 py-2.5 flex items-center justify-between cursor-pointer transition-colors duration-150",
+                                                i === selectedIndex ? "bg-opacity-100" : "bg-transparent"
                                             )}
                                             style={{ 
                                                 backgroundColor: i === selectedIndex ? activeTheme.primary : 'transparent',
                                                 color: i === selectedIndex ? activeTheme.bg : activeTheme.textDim,
-                                                opacity: i === selectedIndex ? 1 : 0.6
                                             }}
                                         >
                                             <div className="flex items-center gap-4">
