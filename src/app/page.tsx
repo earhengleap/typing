@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { RotateCcw, Timer, Type, Globe, Zap, MousePointer2, Lock, Search, Music, Volume2, VolumeX, Bell, Check, Palette, Star, Terminal, Keyboard as LucideKeyboard } from "lucide-react";
-import { FaLock } from "react-icons/fa";
+import { FaLock, FaMountain } from "react-icons/fa6";
 import { AuthenticCrown } from "@/components/icons/AuthenticCrown";
 import { AuthenticKeyboard } from "@/components/icons/AuthenticKeyboard";
 import { cn } from "@/lib/utils";
@@ -14,92 +14,7 @@ import { incrementTestsStarted, getGhostRun, saveTypingResult } from "@/app/acti
 import { ACHIEVEMENTS } from "@/constants/achievements";
 import { ConfigurationBar } from "@/components/ConfigurationBar";
 
-const WORD_POOL = [
-    "function", "variable", "constant", "component", "interface", "generic", "promise", "async", "await", "callback",
-    "closure", "hoisting", "recursion", "algorithm", "database", "frontend", "backend", "fullstack", "serverless",
-    "container", "docker", "kubernetes", "typescript", "javascript", "react", "angular", "vue", "nextjs", "vite",
-    "tailwind", "postcss", "eslint", "prettier", "git", "commit", "push", "pull", "merge", "branch", "conflict",
-    "deployment", "continuous", "integration", "delivery", "pipeline", "automation", "testing", "jest", "cypress",
-    "debugger", "console", "terminal", "workflow", "production", "staging", "development", "middleware", "package",
-    "application", "framework", "library", "module", "export", "import", "class", "object", "array", "string",
-    "number", "boolean", "null", "undefined", "symbol", "bigint", "operator", "expression", "statement", "loop",
-    "condition", "switch", "case", "default", "try", "catch", "finally", "throw", "error", "event", "listener",
-    "handler", "state", "props", "hook", "effect", "context", "reducer", "memo", "ref", "query", "mutation",
-    "api", "endpoint", "request", "response", "json", "xml", "html", "css", "scss", "less", "stylus",
-    "render", "virtual", "shadow", "proxy", "reflect", "iterator", "generator", "prototype", "constructor",
-    "inheritance", "polymorphism", "encapsulation", "abstraction", "singleton", "factory", "observer", "pattern",
-    "architecture", "microservice", "monolith", "gateway", "loadbalancer", "cache", "redis", "queue", "stream",
-    "socket", "websocket", "protocol", "encryption", "authentication", "authorization", "token", "session",
-    "cookie", "header", "payload", "schema", "migration", "transaction", "index", "constraint", "normalize",
-    "aggregate", "pipeline", "transform", "validate", "sanitize", "escape", "encode", "decode", "compress",
-    "buffer", "channel", "thread", "process", "runtime", "compiler", "interpreter", "bytecode", "assembly",
-    "register", "memory", "pointer", "stack", "heap", "garbage", "collection", "reference", "scope", "chain",
-    "binding", "dispatch", "middleware", "resolver", "loader", "plugin", "extension", "widget", "component",
-    "template", "directive", "decorator", "annotation", "metadata", "reflection", "introspection", "dynamic",
-    "static", "immutable", "mutable", "reactive", "declarative", "imperative", "functional", "procedural"
-];
-
-const KHMER_WORD_POOL = [
-    "សួស្តី", "អរគុណ", "កម្ពុជា", "ភ្នំពេញ", "ស្រលាញ់", "បច្ចេកវិទ្យា", "កម្មវិធី", "កូដ", "ទូរស័ព្ទ", "កុំព្យូទ័រ",
-    "ការងារ", "សាលា", "រៀន", "អាន", "សរសេរ", "និយាយ", "ស្តាប់", "យល់", "ដឹង", "ធ្វើ",
-    "បាន", "មាន", "អត់", "មិន", "ល្អ", "ច្រើន", "តិច", "ធំ", "តូច", "វែង",
-    "ខ្លី", "ថ្ងៃមិញ", "ថ្ងៃនេះ", "ថ្ងៃស្អែក", "ពេល", "ម៉ោង", "នាទី", "វិនាទី", "ប៉ុន្មាន", "ប្រហែល",
-    "ប្រាកដ", "ច្បាស់", "ត្រឹមត្រូវ", "ខុស", "ត្រូវ", "ថ្មី", "ចាស់", "ស្អាត", "លឿន", "យឺត",
-    "សប្បាយ", "ពិបាក", "ងាយ", "ស្រួល", "ជួយ", "សុំ", "ឲ្យ", "យក", "ទុក", "ចាំ",
-    "ភ្លេច", "គិត", "ស្មាន", "ជឿ", "សង្ឃឹម", "ចង់", "ត្រូវការ", "អាច", "គួរ", "មុខ",
-    "ក្រោយ", "លើ", "ក្រោម", "ក្នុង", "ក្រៅ", "ឆ្វេង", "ស្តាំ", "កណ្តាល", "គៀន", "ជិត",
-    "ឆ្ងាយ", "ដើរ", "រត់", "ឈរ", "អង្គុយ", "ដេក", "ញ៉ាំ", "ផឹក", "មើល", "ឃើញ",
-    "ទិញ", "លក់", "ចំណាយ", "ចំណេញ", "ខាត", "ថ្លៃ", "ថោក", "ប្រាក់", "លុយ", "ធនាគារ",
-    "ផ្ទះ", "គ្រួសារ", "ម្តាយ", "ឪពុក", "បងប្រុស", "បងស្រី", "កូន", "ប្រពន្ធ", "ប្តី", "មិត្ត",
-    "សត្វ", "ឆ្កែ", "ឆ្មា", "បក្សី", "ត្រី", "ដំរី", "ខ្លា", "ក្រពើ", "សេះ", "គោ",
-    "ម្ហូប", "បាយ", "ទឹក", "ផ្លែឈើ", "បន្លែ", "សាច់", "ស៊ុប", "នំ", "កាហ្វេ", "តែ",
-    "ស្រស់", "ពិសេស", "ឆ្ងាញ់", "ផ្អែម", "ជូរ", "ប្រៃ", "ហឹរ", "ក្តៅ", "ត្រជាក់", "រដូវ",
-    "ភ្លៀង", "ខ្យល់", "ព្រះអាទិត្យ", "ព្រះច័ន្ទ", "ផ្កាយ", "មេឃ", "ទន្លេ", "សមុទ្រ", "ភ្នំ", "វាល",
-    "ប្រទេស", "ទីក្រុង", "ភូមិ", "ផ្លូវ", "ទីផ្សារ", "វត្ត", "សាលារៀន", "មន្ទីរពេទ្យ", "ស្ពាន", "រោងចក្រ",
-    "សិស្ស", "គ្រូ", "សៀវភៅ", "ប៊ិច", "ខ្មៅដៃ", "តុ", "កៅអី", "ក្តារខៀន", "ថ្នាក់", "វិទ្យាល័យ",
-    "សាកលវិទ្យាល័យ", "ចំណេះដឹង", "បទពិសោធន៍", "ជោគជ័យ", "សុភមង្គល", "សន្តិភាព", "សេរីភាព", "យុត្តិធម៌", "សីលធម៌", "វប្បធម៌",
-    "ប្រពៃណី", "ជាតិ", "សាសនា", "ព្រះមហាក្សត្រ", "ប្រវត្តិសាស្ត្រ", "អនាគត", "ពិភពលោក", "ធម្មជាតិ", "បរិស្ថាន", "កីឡា",
-    "តន្ត្រី", "សិល្បៈ", "ភាពយន្ត", "ទេសចរណ៍", "អាហារ", "សុខភាព", "កម្លាំង", "ចិត្ត", "គំនិត", "ក្តីស្រមៃ"
-];
-
-const NK_CREAMS_SOUNDS = [
-    "https://monkeytype.com/sound/click4/click4_1.wav",
-    "https://monkeytype.com/sound/click4/click4_11.wav",
-    "https://monkeytype.com/sound/click4/click4_2.wav",
-    "https://monkeytype.com/sound/click4/click4_22.wav",
-    "https://monkeytype.com/sound/click4/click4_3.wav",
-    "https://monkeytype.com/sound/click4/click4_33.wav",
-    "https://monkeytype.com/sound/click4/click4_4.wav",
-    "https://monkeytype.com/sound/click4/click4_44.wav",
-    "https://monkeytype.com/sound/click4/click4_5.wav",
-    "https://monkeytype.com/sound/click4/click4_55.wav",
-    "https://monkeytype.com/sound/click4/click4_6.wav",
-    "https://monkeytype.com/sound/click4/click4_66.wav"
-];
-
-const LAYOUT_MAPS: Record<string, string[][]> = {
-    qwerty: [
-        ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="],
-        ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", "\\"],
-        ["a", "s", "d", "f", "g", "h", "j", "k", "l", ";", "'"],
-        ["shift", "z", "x", "c", "v", "b", "n", "m", ",", ".", "/", "shift"],
-        ["space"]
-    ],
-    dvorak: [
-        ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "[", "]"],
-        ["'", ",", ".", "p", "y", "f", "g", "c", "r", "l", "/", "=", "\\"],
-        ["a", "o", "e", "u", "i", "d", "h", "t", "n", "s", "-"],
-        ["shift", ";", "q", "j", "k", "x", "b", "m", "w", "v", "z", "shift"],
-        ["space"]
-    ],
-    colemak: [
-        ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="],
-        ["q", "w", "f", "p", "g", "j", "l", "u", "y", ";", "[", "]", "\\"],
-        ["a", "r", "s", "t", "d", "h", "n", "e", "i", "o", "'"],
-        ["shift", "z", "x", "c", "v", "b", "k", "m", ",", ".", "/", "shift"],
-        ["space"]
-    ]
-};
+import { WORD_POOL, KHMER_WORD_POOL, LAYOUT_MAPS } from "@/constants/words";
 
 const KEYBOARD_ROWS = LAYOUT_MAPS.qwerty;
 
@@ -535,16 +450,76 @@ const Keyboard = React.memo(({
 Keyboard.displayName = "Keyboard";
 
 export default function MonkeyTypePage() {
+    const mode = useMonkeyTypeStore(state => state.mode);
+    const config = useMonkeyTypeStore(state => state.config);
+    const language = useMonkeyTypeStore(state => state.language);
+    const theme = useMonkeyTypeStore(state => state.theme);
+    const stats = useMonkeyTypeStore(state => state.stats);
+    const chartData = useMonkeyTypeStore(state => state.chartData);
+    const timeLeft = useMonkeyTypeStore(state => state.timeLeft);
+    const isActive = useMonkeyTypeStore(state => state.isActive);
+    const isFinished = useMonkeyTypeStore(state => state.isFinished);
+    const isWrongKeyboardLayout = useMonkeyTypeStore(state => state.isWrongKeyboardLayout);
+    const zenMode = useMonkeyTypeStore(state => state.zenMode);
+    const soundEnabled = useMonkeyTypeStore(state => state.soundEnabled);
+    const showLiveWpm = useMonkeyTypeStore(state => state.showLiveWpm);
+    const showLiveAccuracy = useMonkeyTypeStore(state => state.showLiveAccuracy);
+    const showKeyboard = useMonkeyTypeStore(state => state.showKeyboard);
+    const fontSize = useMonkeyTypeStore(state => state.fontSize);
+    const fontFamily = useMonkeyTypeStore(state => state.fontFamily);
+    const soundType = useMonkeyTypeStore(state => state.soundType);
+    const soundVolume = useMonkeyTypeStore(state => state.soundVolume);
+    const soundOnError = useMonkeyTypeStore(state => state.soundOnError);
+    const playTimeWarning = useMonkeyTypeStore(state => state.playTimeWarning);
+    const favoriteThemes = useMonkeyTypeStore(state => state.favoriteThemes);
+    const punctuation = useMonkeyTypeStore(state => state.punctuation);
+    const numbers = useMonkeyTypeStore(state => state.numbers);
+    const customText = useMonkeyTypeStore(state => state.customText);
+    const customTextByLanguage = useMonkeyTypeStore(state => state.customTextByLanguage);
+    const customTextMode = useMonkeyTypeStore(state => state.customTextMode);
+    const customTextLimitMode = useMonkeyTypeStore(state => state.customTextLimitMode);
+    const customTextLimitValue = useMonkeyTypeStore(state => state.customTextLimitValue);
+    const customTextPipeDelimiter = useMonkeyTypeStore(state => state.customTextPipeDelimiter);
+    const keymapMode = useMonkeyTypeStore(state => state.keymapMode);
+    const keymapStyle = useMonkeyTypeStore(state => state.keymapStyle);
+    const keymapLegendStyle = useMonkeyTypeStore(state => state.keymapLegendStyle);
+    const keymapSize = useMonkeyTypeStore(state => state.keymapSize);
+    const keymapLayout = useMonkeyTypeStore(state => state.keymapLayout);
+    const keymapShowTopRow = useMonkeyTypeStore(state => state.keymapShowTopRow);
+    const isSearchOpen = useMonkeyTypeStore(state => state.isSearchOpen);
+    const searchQuery = useMonkeyTypeStore(state => state.searchQuery);
+    const selectedIndex = useMonkeyTypeStore(state => state.selectedIndex);
+    const activeCommandGroup = useMonkeyTypeStore(state => state.activeCommandGroup);
+
     const {
-        mode, config, language, theme, stats, chartData, timeLeft, isActive, isFinished, isWrongKeyboardLayout,
-        soundEnabled, showLiveWpm, showLiveAccuracy, showKeyboard, fontSize, fontFamily, soundType, soundVolume, soundOnError, playTimeWarning, favoriteThemes,
         setIsActive, setIsFinished, setTimeLeft, setStats, setChartData, resetLiveState, addHistory,
         setMode, setConfig, setLanguage, setTheme, setIsWrongKeyboardLayout, setShowKeyboard, setSettings, toggleFavoriteTheme,
-        isSearchOpen, setIsSearchOpen, searchQuery, setSearchQuery, selectedIndex, setSelectedIndex, activeCommandGroup, setActiveCommandGroup,
-        punctuation, numbers, setPunctuation, setNumbers,
-        keymapMode, keymapStyle, keymapLegendStyle, keymapSize, keymapLayout, keymapShowTopRow,
+        setIsSearchOpen, setSearchQuery, setSelectedIndex, setActiveCommandGroup,
+        setPunctuation, setNumbers, setZenMode,
         setKeymapMode, setKeymapStyle, setKeymapLegendStyle, setKeymapSize, setKeymapLayout, setKeymapShowTopRow
     } = useMonkeyTypeStore();
+
+    const isZenHidden = zenMode && isActive && !isFinished;
+
+    const [words, setWords] = useState<string[]>([]);
+    const [typedWords, setTypedWords] = useState<string[]>([]);
+    const [currentWordIndex, setCurrentWordIndex] = useState(0);
+
+    const zenWordCount = useMemo(() => {
+        const raw = typedWords[0] || "";
+        const words = raw.trim().length > 0 ? raw.trim().split(/\s+/).length : 0;
+        return /\s$/.test(raw) ? words : Math.max(0, words - 1);
+    }, [typedWords]);
+
+    useEffect(() => {
+        if (mode === "zen" && currentWordIndex > words.length - 10 && words.length > 0) {
+            // Add 100 more words
+            const pool = language === "khmer" ? KHMER_WORD_POOL : WORD_POOL;
+            const moreWords = Array.from({ length: 100 }, () => pool[Math.floor(Math.random() * pool.length)]);
+            setWords([...words, ...moreWords]);
+            setTypedWords([...typedWords, ...new Array(100).fill("")]);
+        }
+    }, [currentWordIndex, mode, words, language, typedWords, setWords, setTypedWords]);
 
     // -- Advance Sound System --
     const playClickSound = useCallback((forceType?: string, isPreview: boolean = false, overrideVolume?: number) => {
@@ -559,7 +534,7 @@ export default function MonkeyTypePage() {
             
             // Use overrideVolume if provided, otherwise use global soundVolume
             const effectiveVolume = overrideVolume !== undefined ? overrideVolume : soundVolume;
-            masterGain.gain.setValueAtTime(effectiveVolume * 6.0, audioCtx.currentTime); // Scaled volume
+            masterGain.gain.setValueAtTime(effectiveVolume * 25.0, audioCtx.currentTime); // Scaled volume
 
             const now = audioCtx.currentTime;
 
@@ -693,12 +668,9 @@ export default function MonkeyTypePage() {
                     noise.start(); noise.stop(now + 0.08);
                     break;
                 }
-                case 'nk_creams': {
-                    const audio = new Audio(NK_CREAMS_SOUNDS[Math.floor(Math.random() * NK_CREAMS_SOUNDS.length)]);
-                    audio.volume = Math.min(1.0, effectiveVolume * 1.5);
-                    audio.play().catch(() => {});
+                case 'nk_creams': 
+                    playMechanical(180, 0.12, 0.15); 
                     break;
-                }
                 case 'stone': playMechanical(80, 0.15, 0.4); break;
                 case 'glass': {
                     const osc = audioCtx.createOscillator();
@@ -807,7 +779,7 @@ export default function MonkeyTypePage() {
             const audioCtx = new AudioContextClass();
             const g = audioCtx.createGain();
             g.connect(audioCtx.destination);
-            g.gain.setValueAtTime(soundVolume * 4.5, audioCtx.currentTime);
+            g.gain.setValueAtTime(soundVolume * 15.0, audioCtx.currentTime);
             const now = audioCtx.currentTime;
 
             // Synthesis definitions for different error types
@@ -918,7 +890,7 @@ export default function MonkeyTypePage() {
             const audioCtx = new AudioContextClass();
             const g = audioCtx.createGain();
             g.connect(audioCtx.destination);
-            g.gain.setValueAtTime(soundVolume * 0.5, audioCtx.currentTime);
+            g.gain.setValueAtTime(soundVolume * 5.0, audioCtx.currentTime);
             const now = audioCtx.currentTime;
 
             const playNote = (freq: number, start: number) => {
@@ -940,9 +912,6 @@ export default function MonkeyTypePage() {
         } catch { }
     }, [playTimeWarning, soundVolume]);
 
-    const [words, setWords] = useState<string[]>([]);
-    const [typedWords, setTypedWords] = useState<string[]>([]);
-    const [currentWordIndex, setCurrentWordIndex] = useState(0);
     const [startTime, setStartTime] = useState<number | null>(null);
 
     const [caretPos, setCaretPos] = useState({ top: 0, left: 0 });
@@ -1006,7 +975,7 @@ export default function MonkeyTypePage() {
     useEffect(() => { statsRef.current = stats; }, [stats]);
     useEffect(() => { startTimeRef.current = startTime; }, [startTime]);
 
-    const inputRef = useRef<HTMLInputElement>(null);
+    const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
     const keystrokeTimes = useRef<number[]>([]);
     const lastKeystrokeTime = useRef<number>(Date.now());
     const wordsRef = useRef<HTMLDivElement>(null);
@@ -1014,6 +983,7 @@ export default function MonkeyTypePage() {
     const extraCharRefs = useRef<(HTMLSpanElement | null)[]>([]);
     const restartRef = useRef<HTMLButtonElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const zenCharRefs = useRef<(HTMLSpanElement | null)[]>([]);
 
     const [hasMounted, setHasMounted] = useState(false);
     const wasTabPressedRef = useRef(false);
@@ -1033,10 +1003,104 @@ export default function MonkeyTypePage() {
         return words.join(" ");
     }, [words]);
 
+    const isCustomTimed = mode === "custom" && customTextLimitMode === "time" && customTextLimitValue > 0;
+    const languageCustomText = customTextByLanguage?.[language] ?? (language === "english" ? customText : "");
+
+    const tokenizeCustomText = useCallback((raw: string, lang: Language, pipeDelimiter: boolean) => {
+        if (pipeDelimiter) {
+            return raw.split("|").map(w => w.trim()).filter(Boolean);
+        }
+
+        const hasWhitespace = /\s/.test(raw);
+        if (hasWhitespace) {
+            return raw.trim().split(/\s+/).filter(Boolean);
+        }
+
+        if (lang === "khmer" && typeof Intl !== "undefined" && "Segmenter" in Intl) {
+            try {
+                const seg = new Intl.Segmenter("km", { granularity: "word" });
+                const pieces = Array.from(seg.segment(raw))
+                    .map((s: { segment: string }) => s.segment.trim())
+                    .filter(Boolean);
+                if (pieces.length > 0) return pieces;
+            } catch {
+                // Fallback below.
+            }
+        }
+
+        return raw.trim().length > 0 ? [raw.trim()] : [];
+    }, []);
+
+    const buildCustomWords = useCallback((raw: string, targetLang: Language) => {
+        const splitWords = tokenizeCustomText(raw, targetLang, customTextPipeDelimiter);
+
+        const baseWords = splitWords;
+        if (baseWords.length === 0) return [];
+        const modeSetting = customTextMode === "simple" ? "repeat" : customTextMode;
+        const limitSetting = customTextMode === "simple"
+            ? (customTextPipeDelimiter ? "section" : "word")
+            : customTextLimitMode;
+        const limitValue = (customTextMode === "simple" && customTextLimitValue === 0) ? baseWords.length : customTextLimitValue;
+
+        const defaultCount = 300;
+        const boundedCount = (limitSetting === "word" || limitSetting === "section")
+            ? (limitValue > 0 ? limitValue : defaultCount)
+            : defaultCount;
+
+        const shuffle = (arr: string[]) => {
+            const copy = [...arr];
+            for (let i = copy.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [copy[i], copy[j]] = [copy[j], copy[i]];
+            }
+            return copy;
+        };
+
+        if (modeSetting === "random") {
+            return Array.from({ length: boundedCount }, () => baseWords[Math.floor(Math.random() * baseWords.length)]);
+        }
+
+        if (modeSetting === "shuffle") {
+            const output: string[] = [];
+            while (output.length < boundedCount) {
+                output.push(...shuffle(baseWords));
+            }
+            return output.slice(0, boundedCount);
+        }
+
+        const output: string[] = [];
+        for (let i = 0; i < boundedCount; i++) {
+            output.push(baseWords[i % baseWords.length]);
+        }
+        return output;
+    }, [tokenizeCustomText, customTextPipeDelimiter, customTextMode, customTextLimitMode, customTextLimitValue]);
+
     const generateWords = useCallback((newMode?: GameMode, newConfig?: GameConfig, newLang?: Language) => {
         const targetMode = newMode || mode;
         const targetConfig = newConfig || config;
         const targetLang = newLang || language;
+
+        if (targetMode === "zen") {
+            setWords([]);
+            setTypedWords([""]);
+            setCurrentWordIndex(0);
+            setTimeout(() => inputRef.current?.focus(), 50);
+            return;
+        }
+
+        if (targetMode === "custom") {
+            const generated = buildCustomWords(languageCustomText, targetLang);
+            if (generated.length === 0) {
+                setWords([""]);
+                setTypedWords([""]);
+                setCurrentWordIndex(0);
+                return;
+            }
+            setWords(generated);
+            setTypedWords(new Array(generated.length).fill(""));
+            setCurrentWordIndex(0);
+            return;
+        }
 
         const count = targetMode === "words" ? (targetConfig as number) : 300;
         const generated: string[] = [];
@@ -1060,7 +1124,7 @@ export default function MonkeyTypePage() {
         setWords(generated);
         setTypedWords(new Array(generated.length).fill(""));
         setCurrentWordIndex(0);
-    }, [mode, config, language, punctuation, numbers, setWords]);
+    }, [mode, config, language, punctuation, numbers, languageCustomText, buildCustomWords, setWords]);
 
 
     const startTest = useCallback(() => {
@@ -1092,27 +1156,36 @@ export default function MonkeyTypePage() {
         let missed = 0;
         let totalTyped = 0;
 
-        typedWordsRef.current.forEach((typed, idx) => {
-            const target = wordsRefData.current[idx];
-            if (!target) return;
-            
-            totalTyped += typed.length;
-            const maxLen = Math.max(typed.length, target.length);
-            
-            for (let i = 0; i < maxLen; i++) {
-                if (i < target.length) {
-                    if (i < typed.length) {
-                        if (typed[i] === target[i]) correct++;
-                        else incorrect++;
-                    } else {
-                        // All remaining characters in words (even current one) are missed on finish
-                        missed++;
+        if (modeRef.current === "zen") {
+            const typed = typedWordsRef.current[0] || "";
+            totalTyped = typed.length;
+            correct = typed.length;
+            incorrect = 0;
+            extra = 0;
+            missed = 0;
+        } else {
+            typedWordsRef.current.forEach((typed, idx) => {
+                const target = wordsRefData.current[idx];
+                if (!target) return;
+                
+                totalTyped += typed.length;
+                const maxLen = Math.max(typed.length, target.length);
+                
+                for (let i = 0; i < maxLen; i++) {
+                    if (i < target.length) {
+                        if (i < typed.length) {
+                            if (typed[i] === target[i]) correct++;
+                            else incorrect++;
+                        } else {
+                            // All remaining characters in words (even current one) are missed on finish
+                            missed++;
+                        }
+                    } else if (i < typed.length) {
+                        extra++;
                     }
-                } else if (i < typed.length) {
-                    extra++;
                 }
-            }
-        });
+            });
+        }
 
         const finalWpm = calculateWPM(correct, elapsedMs);
         const finalAccuracy = totalTyped > 0 ? Math.round((correct / (correct + incorrect + extra)) * 100) : 100;
@@ -1167,18 +1240,18 @@ export default function MonkeyTypePage() {
 
     useEffect(() => {
         let interval: ReturnType<typeof setInterval> | undefined;
-        if (isActive && mode === "time" && timeLeft > 0) {
+        if (isActive && (mode === "time" || isCustomTimed) && timeLeft > 0) {
             interval = setInterval(() => {
                 const nextTime = useMonkeyTypeStore.getState().timeLeft - 1;
                 setTimeLeft(nextTime);
                 const warningTime = typeof playTimeWarning === 'string' && playTimeWarning !== 'off' ? parseInt(playTimeWarning) : (typeof playTimeWarning === 'number' ? playTimeWarning : (playTimeWarning === true ? 10 : null));
                 if (warningTime !== null && nextTime === warningTime) playWarningSound();
             }, 1000);
-        } else if (mode === "time" && timeLeft === 0) {
+        } else if ((mode === "time" || isCustomTimed) && timeLeft === 0) {
             finishTestRef.current();
         }
         return () => clearInterval(interval);
-    }, [isActive, timeLeft === 0, mode, setTimeLeft]);
+    }, [isActive, timeLeft === 0, mode, isCustomTimed, setTimeLeft]);
 
     // Snapshot logic for the chart — runs once on mount/isActive change,
     // reads live values via refs to avoid stale closures
@@ -1268,7 +1341,7 @@ export default function MonkeyTypePage() {
     }, [isActive, ghost, isFinished, startTime, targetText.length]);
 
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         // Anti-cheat
         if (!e.nativeEvent.isTrusted) {
             isCheatDetected.current = true;
@@ -1288,6 +1361,35 @@ export default function MonkeyTypePage() {
         
         let newTypedWords = [...typedWords];
         let newIndex = currentWordIndex;
+
+        if (mode === "zen") {
+            // Zen mode: Free typing, no space advancement
+            newTypedWords[0] = rawValue;
+            playClickSound();
+            setTypedWords(newTypedWords);
+            
+            // Track keystroke time
+            const now = Date.now();
+            const interval = now - lastKeystrokeTime.current;
+            lastKeystrokeIntervals.current.push(interval);
+            keystrokeTimes.current.push(now);
+            lastKeystrokeTime.current = now;
+
+            // Stats for Zen: just total chars
+            const elapsedMs = now - (startTime || now);
+            const wpm = calculateWPM(rawValue.length, elapsedMs);
+            const rawWpm = calculateWPM(rawValue.length, elapsedMs);
+
+            setStats({
+                ...stats,
+                totalChars: rawValue.length,
+                correctChars: rawValue.length, // In Zen, every char is 'correct'
+                wpm,
+                rawWpm,
+                accuracy: 100, // Zen is always 100% since no target
+            });
+            return;
+        }
 
         if (isSpace) {
             // Space pressed: move to next word
@@ -1394,14 +1496,16 @@ export default function MonkeyTypePage() {
         const targetLang = newLang ?? store.language;
 
         generateWords(targetMode, targetConfig, targetLang);
-        setTypedWords(new Array(targetMode === "words" ? (targetConfig as number) : 300).fill(""));
         setCurrentWordIndex(0);
         if (inputRef.current) inputRef.current.value = "";
         setStartTime(null);
         keystrokeTimes.current = [];
         setActiveKeys(new Set());
         setErrorKey(null);
-        resetLiveState(targetMode === "time" ? (targetConfig as number) : 30);
+        const defaultTime = targetMode === "time"
+            ? (targetConfig as number)
+            : (targetMode === "custom" && customTextLimitMode === "time" && customTextLimitValue > 0 ? customTextLimitValue : 30);
+        resetLiveState(defaultTime);
         setLineOffset(0);
         setCaretPos({ top: 0, left: 0 });
         setGhost(null); // Clear ghost on reset
@@ -1410,23 +1514,35 @@ export default function MonkeyTypePage() {
         lastKeystrokeIntervals.current = [];
         setXpResult(null);
         setTimeout(() => inputRef.current?.focus(), 50);
-    }, [generateWords, resetLiveState]);
+    }, [generateWords, resetLiveState, customTextLimitMode, customTextLimitValue]);
 
     
+    const wasFinished = useRef(isFinished);
+    const wasActive = useRef(isActive);
     useEffect(() => {
-        // Reset test when navigating back to home if it was finished
-        // (Zustand store persists across route changes in SPA)
-        if (hasMounted && useMonkeyTypeStore.getState().isFinished) {
+        // Reset test if we transitioned FROM finished/active TO home state
+        // (This happens when clicking the logo/home icon in the header or using shortcuts)
+        const transitionFromFinished = wasFinished.current && !isFinished;
+        const transitionFromActiveReset = wasActive.current && !isActive && !isFinished;
+
+        if (hasMounted && (transitionFromFinished || transitionFromActiveReset)) {
             resetTest();
         }
-    }, [hasMounted, resetTest]);
+        wasFinished.current = isFinished;
+        wasActive.current = isActive;
+    }, [hasMounted, isFinished, isActive, resetTest]);
 
     // Sync timeLeft to config on initial load (hydration fix)
     useEffect(() => {
-        if (hasMounted && !isActive && !isFinished && mode === "time" && timeLeft !== config) {
+        if (!hasMounted || isActive || isFinished) return;
+        if (mode === "time" && timeLeft !== config) {
             setTimeLeft(config as number);
+            return;
         }
-    }, [hasMounted, isActive, isFinished, mode, timeLeft, config, setTimeLeft]);
+        if (isCustomTimed && timeLeft !== customTextLimitValue) {
+            setTimeLeft(customTextLimitValue);
+        }
+    }, [hasMounted, isActive, isFinished, mode, timeLeft, config, isCustomTimed, customTextLimitValue, setTimeLeft]);
 
     interface CommandItem {
         id: string;
@@ -1458,10 +1574,6 @@ export default function MonkeyTypePage() {
             list.push({ id: "lang-en", label: "English", category: "Language", icon: <Globe className="w-4 h-4 opacity-70" />, action: () => { setLanguage("english"); resetTest(); setIsSearchOpen(false); } });
             list.push({ id: "lang-km", label: "Khmer", category: "Language", icon: <Globe className="w-4 h-4 opacity-70" />, action: () => { setLanguage("khmer"); resetTest(); setIsSearchOpen(false); } });
 
-            // Themes
-            list.push({ id: "group-theme-select", label: "Theme...", category: "Theme", icon: <Palette className="w-4 h-4 opacity-70" />, action: () => { setActiveCommandGroup('theme-select'); setSelectedIndex(0); setSearchQuery(""); } });
-            list.push({ id: "action-theme-custom", label: "Custom theme...", category: "Theme", icon: <Palette className="w-4 h-4 opacity-70" />, action: () => { setIsSearchOpen(false); } });
-            
             const isFav = favoriteThemes.includes(theme);
             list.push({ 
                 id: "action-theme-favorite", 
@@ -1470,6 +1582,19 @@ export default function MonkeyTypePage() {
                 icon: <Star className={cn("w-4 h-4", isFav ? "fill-current text-[#e2b714]" : "opacity-70")} />,
                 action: () => { toggleFavoriteTheme(theme); setIsSearchOpen(false); } 
             });
+
+            list.push({ 
+                id: "action-toggle-zen", 
+                label: zenMode ? "Disable Zen Mode" : "Enable Zen Mode", 
+                category: "Action", 
+                icon: <FaMountain className="w-4 h-4 opacity-70" />,
+                isActive: zenMode === true,
+                action: () => { setZenMode(!zenMode); setIsSearchOpen(false); } 
+            });
+
+            // Themes
+            list.push({ id: "group-theme-select", label: "Theme...", category: "Theme", icon: <Palette className="w-4 h-4 opacity-70" />, action: () => { setActiveCommandGroup('theme-select'); setSelectedIndex(0); setSearchQuery(""); } });
+            list.push({ id: "action-theme-custom", label: "Custom theme...", category: "Theme", icon: <Palette className="w-4 h-4 opacity-70" />, action: () => { setIsSearchOpen(false); } });
             
             list.push({ 
                 id: "action-theme-random", 
@@ -1486,7 +1611,7 @@ export default function MonkeyTypePage() {
 
             list.push({ 
                 id: "keyboard-mode-on", 
-                label: "Keyboard mode > on", 
+                label: "keymap mode > on", 
                 category: "Action", 
                 icon: <LucideKeyboard className="w-4 h-4 opacity-70" />,
                 isActive: showKeyboard === true,
@@ -1494,7 +1619,7 @@ export default function MonkeyTypePage() {
             });
             list.push({ 
                 id: "keyboard-mode-off", 
-                label: "Keyboard mode > off", 
+                label: "keymap mode > off", 
                 category: "Action", 
                 icon: <LucideKeyboard className="w-4 h-4 opacity-70" />,
                 isActive: showKeyboard === false,
@@ -1718,6 +1843,15 @@ export default function MonkeyTypePage() {
         setSelectedIndex(Math.min(selectedIndex, Math.max(0, filteredCommands.length - 1)));
     }, [selectedIndex, filteredCommands.length]);
 
+    useEffect(() => {
+        if (isSearchOpen) {
+            const item = document.getElementById(`cmd-item-${selectedIndex}`);
+            if (item) {
+                item.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+            }
+        }
+    }, [selectedIndex, isSearchOpen]);
+
     // Track Tab hold state for Tab+Enter restart
     const isTabHeld = useRef(false);
 
@@ -1739,43 +1873,41 @@ export default function MonkeyTypePage() {
                     }
                 } else if (e.key === "ArrowDown") {
                     e.preventDefault();
-                    const nextIndex = Math.min(selectedIndex + 1, filteredCommands.length - 1);
-                    if (nextIndex !== selectedIndex) {
-                        setSelectedIndex(nextIndex);
-                        const cmd = filteredCommands[nextIndex];
-                        if (cmd.category === "Click Sound") {
-                            const soundId = cmd.id.replace('sound-', '');
-                            playClickSound(soundId, true);
-                        } else if (cmd.category === "Volume") {
-                            // Play a test sound at the highlighted volume
-                            const match = cmd.label.match(/(\d+)%/);
-                            const vol = match ? parseInt(match[1]) / 100 : soundVolume;
-                            playClickSound(undefined, true, vol);
-                        } else if (cmd.category === "Error Sound") {
-                            const errorId = cmd.id.replace('sound-error-', '');
-                            playErrorSound(errorId, true);
-                        } else if (cmd.category === "Time Warning") {
-                            playWarningSound(true);
-                        }
+                    if (filteredCommands.length === 0) return;
+                    const nextIndex = (selectedIndex + 1) % filteredCommands.length;
+                    setSelectedIndex(nextIndex);
+                    
+                    const cmd = filteredCommands[nextIndex];
+                    if (cmd.category === "Click Sound") {
+                        const soundId = cmd.id.replace('sound-', '');
+                        playClickSound(soundId, true);
+                    } else if (cmd.category === "Volume") {
+                        const match = cmd.label.match(/(\d+)%/);
+                        const vol = match ? parseInt(match[1]) / 100 : soundVolume;
+                        playClickSound(undefined, true, vol);
+                    } else if (cmd.category === "Error Sound") {
+                        const errorId = cmd.id.replace('sound-error-', '');
+                        playErrorSound(errorId, true);
+                    } else if (cmd.category === "Time Warning") {
+                        playWarningSound(true);
                     }
                 } else if (e.key === "ArrowUp") {
                     e.preventDefault();
-                    const prevIndex = Math.max(selectedIndex - 1, 0);
-                    if (prevIndex !== selectedIndex) {
-                        setSelectedIndex(prevIndex);
-                        const cmd = filteredCommands[prevIndex];
-                        if (cmd.category === "Click Sound") {
-                            const soundId = cmd.id.replace('sound-', '');
-                            playClickSound(soundId, true);
-                        } else if (cmd.category === "Volume") {
-                            // Play a test sound at the selected volume
-                            playClickSound(undefined, true);
-                        } else if (cmd.category === "Error Sound") {
-                            const errorId = cmd.id.replace('sound-error-', '');
-                            playErrorSound(errorId, true);
-                        } else if (cmd.category === "Time Warning") {
-                            playWarningSound(true);
-                        }
+                    if (filteredCommands.length === 0) return;
+                    const prevIndex = (selectedIndex - 1 + filteredCommands.length) % filteredCommands.length;
+                    setSelectedIndex(prevIndex);
+                    
+                    const cmd = filteredCommands[prevIndex];
+                    if (cmd.category === "Click Sound") {
+                        const soundId = cmd.id.replace('sound-', '');
+                        playClickSound(soundId, true);
+                    } else if (cmd.category === "Volume") {
+                        playClickSound(undefined, true);
+                    } else if (cmd.category === "Error Sound") {
+                        const errorId = cmd.id.replace('sound-error-', '');
+                        playErrorSound(errorId, true);
+                    } else if (cmd.category === "Time Warning") {
+                        playWarningSound(true);
                     }
                 } else if (e.key === "Enter") {
                     e.preventDefault();
@@ -1799,6 +1931,7 @@ export default function MonkeyTypePage() {
                 }
                 return;
             }
+
             if (e.key === "Tab") {
                 e.preventDefault();
                 isTabHeld.current = true;
@@ -1912,7 +2045,6 @@ export default function MonkeyTypePage() {
                     setErrorKey(isIncorrect ? matchedQwerty : null);
                 }
             }
-
 
             if (document.activeElement !== inputRef.current && !["Tab", "Enter", "Escape", "Shift", "Control", "Alt", "Meta"].includes(e.key)) {
                 inputRef.current?.focus();
@@ -2031,6 +2163,33 @@ export default function MonkeyTypePage() {
     }, [clusters]);
 
     useEffect(() => {
+        if (mode !== "zen") return;
+        
+        const text = typedWords[0] || "";
+        const globalIdx = text.length;
+
+        const targetEl = zenCharRefs.current[globalIdx];
+        if (targetEl && wordsRef.current) {
+            const rect = targetEl.getBoundingClientRect();
+            const containerRect = wordsRef.current.getBoundingClientRect();
+            setCaretPos({
+                top: rect.top - containerRect.top,
+                left: rect.left - containerRect.left
+            });
+
+            // Handle scrolling for Zen mode
+            const lineHeightVal = language === "khmer" ? 58 : (fontSize * 1.6);
+            const relativeTop = rect.top - containerRect.top + lineOffset;
+            if (relativeTop > lineHeightVal * 1.5) {
+                setLineOffset(prev => prev - lineHeightVal);
+            } else if (relativeTop < 0) {
+                setLineOffset(0); 
+            }
+        }
+    }, [mode, typedWords, lineOffset, fontSize, language]);
+
+    useEffect(() => {
+        if (mode === "zen") return;
         const currentTyped = typedWords[currentWordIndex] || "";
         const currentWordGroup = wordGroups[currentWordIndex];
         
@@ -2204,6 +2363,7 @@ export default function MonkeyTypePage() {
                                     filteredCommands.map((cmd, i) => (
                                         <div
                                             key={cmd.id}
+                                            id={`cmd-item-${i}`}
                                             onClick={() => {
                                                 if (cmd.category === "Click Sound") {
                                                     const soundId = cmd.id.replace('sound-', '');
@@ -2226,8 +2386,8 @@ export default function MonkeyTypePage() {
                                                 i === selectedIndex ? "bg-opacity-100" : "bg-transparent"
                                             )}
                                             style={{ 
-                                                backgroundColor: i === selectedIndex ? activeTheme.primary : 'transparent',
-                                                color: i === selectedIndex ? activeTheme.bg : activeTheme.textDim,
+                                                backgroundColor: i === selectedIndex ? 'rgba(255,255,255,0.1)' : 'transparent',
+                                                color: i === selectedIndex ? activeTheme.text : activeTheme.textDim,
                                             }}
                                         >
                                             <div className="flex items-center gap-4">
@@ -2293,6 +2453,10 @@ export default function MonkeyTypePage() {
                 )}
             </AnimatePresence>
 
+            <div className="w-full flex-none pt-4 flex justify-center z-[5]">
+                <ConfigurationBar />
+            </div>
+
             <AnimatePresence mode="wait">
                 {!isFinished ? (
                     <motion.div
@@ -2302,7 +2466,6 @@ export default function MonkeyTypePage() {
                         exit={{ opacity: 0, y: -10 }}
                         className="w-full max-w-[var(--content-max-w)] flex-1 flex flex-col justify-center gap-2 sm:gap-4 md:gap-6 lg:gap-8 min-h-0"
                     >
-                        <ConfigurationBar />
 
                         <div className="relative w-full flex flex-col gap-2 sm:gap-4 md:gap-6 lg:gap-8">
                             {/* Inner Container (No longer blurred here) */}
@@ -2328,11 +2491,18 @@ export default function MonkeyTypePage() {
                                     )}
                                 </AnimatePresence>
 
-                                <div className="h-10 flex justify-start items-center gap-6 px-1 sm:px-4">
-                                    {(isActive || isFinished) && (
-                                        <>
+                                <AnimatePresence>
+                                    {!isZenHidden && (isActive || isFinished) && (
+                                        <motion.div
+                                            key="hud-animation"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.13 }}
+                                            className="h-10 flex justify-start items-center gap-6 px-1 sm:px-4"
+                                        >
                                             <div className="text-3xl font-bold transition-colors duration-500" style={{ color: activeTheme.primary }}>
-                                                {mode === "time" ? timeLeft : `${currentWordIndex}/${config}`}
+                                                {(mode === "time" || isCustomTimed) ? timeLeft : mode === "zen" ? zenWordCount : `${currentWordIndex}/${mode === "custom" ? words.length : config}`}
                                             </div>
                                             {showLiveWpm && stats.wpm > 0 && (
                                                 <div className="text-xl font-bold transition-colors duration-500" style={{ color: activeTheme.text }}>
@@ -2344,10 +2514,9 @@ export default function MonkeyTypePage() {
                                                     {stats.accuracy}<span className="text-xs opacity-50">%</span>
                                                 </div>
                                             )}
-                                        </>
+                                        </motion.div>
                                     )}
-                                </div>
-
+                                </AnimatePresence>
 
                                 {/* 3-Line Typing Window */}
                                 <div
@@ -2399,8 +2568,8 @@ export default function MonkeyTypePage() {
                                                 )}
                                                 style={{
                                                     backgroundColor: 'var(--mt-primary)',
-                                                    height: language === "khmer" ? '34px' : `${fontSize * 1.2}px`,
-                                                    marginTop: language === "khmer" ? '6px' : `${fontSize * 0.2}px`,
+                                                    height: language === "khmer" ? '44px' : `${fontSize * 1.4}px`,
+                                                    marginTop: language === "khmer" ? '10px' : `${fontSize * 0.15}px`,
                                                     boxShadow: `0 0 10px var(--mt-primary)40`,
                                                 }}
                                             />
@@ -2439,9 +2608,41 @@ export default function MonkeyTypePage() {
                                                 </motion.div>
                                             )}
 
-                                            {/* Words Grid */}
-                                            <div className={cn("flex flex-wrap w-full", language === "khmer" ? "font-hanuman" : "")}>
-                                                {wordGroups.map((group, groupIdx) => {
+                                            {/* Words Grid or Zen Free-Type Area */}
+                                            {mode === "zen" ? (
+                                                <div 
+                                                    className={cn("w-full text-left break-words whitespace-pre-wrap flex flex-wrap", language === "khmer" ? "font-hanuman text-[1.25em]" : "")}
+                                                    style={{ 
+                                                        lineHeight: language === "khmer" ? 'var(--khmer-line-height)' : `${fontSize * 1.6}px`,
+                                                    }}
+                                                >
+                                                    {(typedWords[0] || "").split('').map((char, i) => {
+                                                        if (char === '\n') {
+                                                            return (
+                                                                <div 
+                                                                    key={i} 
+                                                                    ref={el => { zenCharRefs.current[i] = el; }} 
+                                                                    className="flex-none basis-full h-0 opacity-0 pointer-events-none" 
+                                                                />
+                                                            );
+                                                        }
+                                                        return (
+                                                            <span 
+                                                                key={i} 
+                                                                ref={el => { zenCharRefs.current[i] = el; }} 
+                                                                className="transition-colors duration-100 inline whitespace-pre" 
+                                                                style={{ color: activeTheme.text }}
+                                                            >
+                                                                {char === ' ' ? '\u00A0' : char}
+                                                            </span>
+                                                        );
+                                                    })}
+                                                    {/* Final Caret Target at the very end of everything */}
+                                                    <span ref={el => { zenCharRefs.current[typedWords[0]?.length || 0] = el; }} className="inline-block w-px opacity-0"> </span>
+                                                </div>
+                                            ) : (
+                                                <div className={cn("flex flex-wrap w-full", language === "khmer" ? "font-hanuman" : "")}>
+                                                    {wordGroups.map((group, groupIdx) => {
                                                     const wordTyped = typedWords[groupIdx] || "";
                                                     const wordTarget = words[groupIdx] || "";
 
@@ -2463,32 +2664,65 @@ export default function MonkeyTypePage() {
                                                     );
                                                 })}
                                             </div>
+                                            )}
 
                                         </motion.div>
 
-                                        <input
-                                            ref={inputRef}
-                                            type="text"
-                                            defaultValue=""
-                                            onChange={handleInputChange}
-                                            onPaste={(e) => e.preventDefault()}
-                                            onFocus={() => {
-                                                setIsFocused(true);
-                                                wasTabPressedRef.current = false;
-                                            }}
-                                            onBlur={() => {
-                                                setIsFocused(false);
-                                            }}
-                                            onKeyDown={(e) => {
-                                                if (e.key === "Tab") {
-                                                    wasTabPressedRef.current = true;
-                                                }
-                                            }}
-                                            className="absolute inset-0 w-full h-full opacity-0 outline-none cursor-default"
-                                            autoFocus
-                                            spellCheck={false}
-                                            autoComplete="off"
-                                        />
+                                            {mode === "zen" ? (
+                                                <textarea
+                                                    id="typing-input"
+                                                    ref={inputRef as React.RefObject<HTMLTextAreaElement>}
+                                                    defaultValue=""
+                                                    onChange={handleInputChange}
+                                                    onPaste={(e) => e.preventDefault()}
+                                                    onFocus={() => {
+                                                        setIsFocused(true);
+                                                        wasTabPressedRef.current = false;
+                                                    }}
+                                                    onBlur={() => {
+                                                        setIsFocused(false);
+                                                    }}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === "Tab") {
+                                                            wasTabPressedRef.current = true;
+                                                        }
+                                                        // 1:1 Monkeytype shortcut: Shift + Enter to finish Zen mode
+                                                        if (e.key === "Enter" && e.shiftKey && mode === "zen" && isActive) {
+                                                            e.preventDefault();
+                                                            finishTest();
+                                                        }
+                                                    }}
+                                                    className="absolute inset-0 w-full h-full opacity-0 outline-none cursor-default resize-none overflow-hidden"
+                                                    autoFocus
+                                                    spellCheck={false}
+                                                    autoComplete="off"
+                                                />
+                                            ) : (
+                                                <input
+                                                    id="typing-input"
+                                                    ref={inputRef as React.RefObject<HTMLInputElement>}
+                                                    type="text"
+                                                    defaultValue=""
+                                                    onChange={handleInputChange}
+                                                    onPaste={(e) => e.preventDefault()}
+                                                    onFocus={() => {
+                                                        setIsFocused(true);
+                                                        wasTabPressedRef.current = false;
+                                                    }}
+                                                    onBlur={() => {
+                                                        setIsFocused(false);
+                                                    }}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === "Tab") {
+                                                            wasTabPressedRef.current = true;
+                                                        }
+                                                    }}
+                                                    className="absolute inset-0 w-full h-full opacity-0 outline-none cursor-default"
+                                                    autoFocus
+                                                    spellCheck={false}
+                                                    autoComplete="off"
+                                                />
+                                            )}
 
                                     </div>
 
@@ -2526,107 +2760,133 @@ export default function MonkeyTypePage() {
                                 </div>
 
                                 {/* Keyboard — Desktop only */}
-                                <div
-                                    className="hidden md:block"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        inputRef.current?.focus();
-                                    }}
-                                >
-                                    {showKeyboard && (() => {
-                                        // Always show next key to press, updating as the user types
-                                        const currentWord = words[currentWordIndex] || "";
-                                        const currentTyped = typedWords[currentWordIndex] || "";
-                                        const remainingTarget = currentWord.slice(currentTyped.length);
-                                        
-                                        let nextKey: string | null = null;
-                                        let needsShift = false;
+                                <AnimatePresence>
+                                    {!isZenHidden && showKeyboard && (
+                                        <motion.div
+                                            key="keyboard-animation"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.13 }}
+                                            className="hidden md:block"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                inputRef.current?.focus();
+                                            }}
+                                        >
+                                            {(() => {
+                                                // Always show next key to press, updating as the user types
+                                                const currentWord = words[currentWordIndex] || "";
+                                                const currentTyped = typedWords[currentWordIndex] || "";
+                                                const remainingTarget = currentWord.slice(currentTyped.length);
+                                                
+                                                let nextKey: string | null = null;
+                                                let needsShift = false;
 
-                                        if (remainingTarget) {
-                                            if (language === "khmer") {
-                                                for (const [qKey, m] of Object.entries(KHMER_KEY_MAP)) {
-                                                    if (remainingTarget.startsWith(m.base)) {
-                                                        nextKey = qKey;
-                                                        needsShift = false;
-                                                        break;
+                                                if (remainingTarget) {
+                                                    if (language === "khmer") {
+                                                        for (const [qKey, m] of Object.entries(KHMER_KEY_MAP)) {
+                                                            if (remainingTarget.startsWith(m.base)) {
+                                                                nextKey = qKey;
+                                                                needsShift = false;
+                                                                break;
+                                                            }
+                                                            if (remainingTarget.startsWith(m.shift)) {
+                                                                nextKey = qKey;
+                                                                needsShift = true;
+                                                                break;
+                                                            }
+                                                        }
+                                                    } else {
+                                                        const char = remainingTarget[0];
+                                                        const baseKey = ENGLISH_BASE_MAP[char] || char.toLowerCase();
+                                                        for (const row of KEYBOARD_ROWS) {
+                                                            if (row.includes(baseKey)) {
+                                                                nextKey = baseKey;
+                                                                break;
+                                                            }
+                                                        }
+                                                        needsShift = /[A-Z!@#$%^&*()_+{}|:"<>?]/.test(char);
                                                     }
-                                                    if (remainingTarget.startsWith(m.shift)) {
-                                                        nextKey = qKey;
-                                                        needsShift = true;
-                                                        break;
-                                                    }
+                                                } else {
+                                                    // Word is complete, next is space
+                                                    nextKey = "space";
+                                                    needsShift = language === "khmer";
                                                 }
-                                            } else {
-                                                const char = remainingTarget[0];
-                                                const baseKey = ENGLISH_BASE_MAP[char] || char.toLowerCase();
-                                                for (const row of KEYBOARD_ROWS) {
-                                                    if (row.includes(baseKey)) {
-                                                        nextKey = baseKey;
-                                                        break;
-                                                    }
-                                                }
-                                                needsShift = /[A-Z!@#$%^&*()_+{}|:"<>?]/.test(char);
-                                            }
-                                        } else {
-                                            // Word is complete, next is space
-                                            nextKey = "space";
-                                            needsShift = language === "khmer";
-                                        }
 
-                                        const nextKeyData = { key: nextKey, needsShift };
+                                                const nextKeyData = { key: nextKey, needsShift };
 
-                                        return (
-                                            <Keyboard
-                                                activeKeys={activeKeys}
-                                                errorKey={errorKey}
-                                                language={language}
-                                                nextKeyData={nextKeyData}
-                                                activeTheme={activeTheme}
-                                                keymapMode={keymapMode}
-                                                keymapStyle={keymapStyle}
-                                                keymapLegendStyle={keymapLegendStyle}
-                                                keymapSize={keymapSize}
-                                                keymapLayout={keymapLayout}
-                                                keymapShowTopRow={keymapShowTopRow}
-                                            />
-                                        );
-                                    })()}
-
-                                </div>
+                                                return (
+                                                    <Keyboard
+                                                        activeKeys={activeKeys}
+                                                        errorKey={errorKey}
+                                                        language={language}
+                                                        nextKeyData={nextKeyData}
+                                                        activeTheme={activeTheme}
+                                                        keymapMode={keymapMode}
+                                                        keymapStyle={keymapStyle}
+                                                        keymapLegendStyle={keymapLegendStyle}
+                                                        keymapSize={keymapSize}
+                                                        keymapLayout={keymapLayout}
+                                                        keymapShowTopRow={keymapShowTopRow}
+                                                    />
+                                                );
+                                            })()}
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
 
 
-                                <div className="flex flex-col items-center gap-3 sm:gap-6 mt-2 sm:mt-4">
-                                    <div className="hidden sm:flex items-center gap-10">
-                                        <ShortcutHint
-                                            keys={["tab", "enter"]}
-                                            label="restart"
-                                            activeTheme={activeTheme}
-                                        />
-                                        <ShortcutHint
-                                            keys={["esc", (typeof navigator !== 'undefined' && /Mac/i.test(navigator.platform)) ? "cmd" : "ctrl", "shift", "p"]}
-                                            splitIndex={0}
-                                            label="command line"
-                                            activeTheme={activeTheme}
-                                        />
-                                    </div>
-                                    <motion.button
-                                        ref={restartRef}
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
-                                        onClick={() => resetTest()}
-                                        className="group flex items-center gap-0 hover:gap-3 focus-visible:gap-3 px-4 py-4 rounded-full transition-all duration-300 focus:outline-none cursor-pointer"
-                                        style={{ color: activeTheme.textDim }}
-                                        onMouseEnter={(e) => { e.currentTarget.style.color = activeTheme.text; e.currentTarget.style.backgroundColor = activeTheme.bgAlt; }}
-                                        onMouseLeave={(e) => { e.currentTarget.style.color = activeTheme.textDim; e.currentTarget.style.backgroundColor = 'transparent'; }}
-                                        onFocus={(e) => { e.currentTarget.style.color = activeTheme.text; e.currentTarget.style.backgroundColor = activeTheme.bgAlt; }}
-                                        onBlur={(e) => { e.currentTarget.style.color = activeTheme.textDim; e.currentTarget.style.backgroundColor = 'transparent'; }}
-                                    >
-                                        <RotateCcw className="w-5 h-5 transition-transform duration-500 group-hover:rotate-180 group-focus-visible:rotate-180" />
-                                        <span className="text-xs font-bold uppercase tracking-widest overflow-hidden whitespace-nowrap w-0 group-hover:w-24 group-focus-visible:w-24 transition-all duration-300 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100">
-                                            restart test
-                                        </span>
-                                    </motion.button>
-                                </div>
+                                <AnimatePresence>
+                                    {!isZenHidden && (
+                                        <motion.div
+                                            key="shortcuts-animation"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.13 }}
+                                            className="flex flex-col items-center gap-3 sm:gap-6 mt-2 sm:mt-4"
+                                        >
+                                            <div className="hidden sm:flex items-center gap-10">
+                                                <ShortcutHint
+                                                    keys={["tab", "enter"]}
+                                                    label="restart"
+                                                    activeTheme={activeTheme}
+                                                />
+                                                {mode === "zen" && (
+                                                    <ShortcutHint
+                                                        keys={["shift", "enter"]}
+                                                        label="finish zen"
+                                                        activeTheme={activeTheme}
+                                                    />
+                                                )}
+                                                <ShortcutHint
+                                                    keys={["esc", (typeof navigator !== 'undefined' && /Mac/i.test(navigator.platform)) ? "cmd" : "ctrl", "shift", "p"]}
+                                                    splitIndex={0}
+                                                    label="command line"
+                                                    activeTheme={activeTheme}
+                                                />
+                                            </div>
+                                            <motion.button
+                                                ref={restartRef}
+                                                whileHover={{ scale: 1.05 }}
+                                                whileTap={{ scale: 0.95 }}
+                                                onClick={() => resetTest()}
+                                                className="group flex items-center gap-0 hover:gap-3 focus-visible:gap-3 px-4 py-4 rounded-full transition-all duration-300 focus:outline-none cursor-pointer"
+                                                style={{ color: activeTheme.textDim }}
+                                                onMouseEnter={(e) => { e.currentTarget.style.color = activeTheme.text; e.currentTarget.style.backgroundColor = activeTheme.bgAlt; }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.color = activeTheme.textDim; e.currentTarget.style.backgroundColor = 'transparent'; }}
+                                                onFocus={(e) => { e.currentTarget.style.color = activeTheme.text; e.currentTarget.style.backgroundColor = activeTheme.bgAlt; }}
+                                                onBlur={(e) => { e.currentTarget.style.color = activeTheme.textDim; e.currentTarget.style.backgroundColor = 'transparent'; }}
+                                            >
+                                                <RotateCcw className="w-5 h-5 transition-transform duration-500 group-hover:rotate-180 group-focus-visible:rotate-180" />
+                                                <span className="text-xs font-bold uppercase tracking-widest overflow-hidden whitespace-nowrap w-0 group-hover:w-24 group-focus-visible:w-24 transition-all duration-300 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100">
+                                                    restart test
+                                                </span>
+                                            </motion.button>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
                         </div>
                     </motion.div>
@@ -2659,7 +2919,7 @@ export default function MonkeyTypePage() {
                                                     .filter(h => h.mode === mode && h.config === config && h.language === language)
                                                     .reduce((max, h) => Math.max(max, h.wpm), 0);
                                                 if (prevBest > 0 && stats.wpm > prevBest) {
-                                                    return <span className="text-[8px] bg-yellow-500/20 text-yellow-500 px-1.5 py-0.5 rounded font-black uppercase">Personal Best!</span>
+                                                    return <span className="text-[8px] bg-white/10 text-white/70 px-1.5 py-0.5 rounded font-black uppercase">Personal Best!</span>
                                                 }
                                                 return null;
                                             })()}
@@ -2698,7 +2958,7 @@ export default function MonkeyTypePage() {
                                                     </div>
                                                 </div>
                                                 {xpResult.levelUp && (
-                                                    <div className="bg-yellow-500/10 text-yellow-500 px-2 py-1 rounded text-[10px] font-black uppercase">Lvl Up!</div>
+                                                    <div className="bg-white/10 text-white/70 px-2 py-1 rounded text-[10px] font-black uppercase">Lvl Up!</div>
                                                 )}
                                             </div>
                                             
@@ -2729,8 +2989,8 @@ export default function MonkeyTypePage() {
                                 >
                                     <div className="flex flex-col">
                                         <span className="text-[9px] font-black uppercase tracking-widest opacity-30 mb-1" style={{ color: activeTheme.textDim }}>test type</span>
-                                        <span className="text-xl font-bold" style={{ color: activeTheme.text }}>{mode} {config}</span>
-                                        <span className="text-[10px] font-medium opacity-40 mt-1" style={{ color: activeTheme.textDim }}>{theme}</span>
+                                        <span className="text-xl font-bold" style={{ color: activeTheme.text }}>{mode} {mode === "custom" ? words.length : config}</span>
+                                        <span className="text-[10px] font-medium opacity-40 mt-1" style={{ color: activeTheme.textDim }}>{language}</span>
                                     </div>
 
                                     <div className="flex flex-col">
@@ -2839,18 +3099,23 @@ export default function MonkeyTypePage() {
             </AnimatePresence >
 
 
-            <div className="fixed bottom-3 sm:bottom-6 right-3 sm:right-6 text-[8px] sm:text-[10px] font-bold tracking-[0.3em] uppercase opacity-20 pointer-events-none" style={{ color: activeTheme.textDim }}>
-                TypeFlow 1.0
-            </div>
+            {!isZenHidden && (
+                <div key="version-watermark" className="fixed bottom-3 sm:bottom-6 right-3 sm:right-6 text-[8px] sm:text-[10px] font-bold tracking-[0.3em] uppercase opacity-20 pointer-events-none" style={{ color: activeTheme.textDim }}>
+                    TypeFlow 1.0
+                </div>
+            )}
 
-            <button
-                onClick={() => setIsSearchOpen(true)}
-                className="fixed lg:hidden bottom-3 sm:bottom-6 left-3 sm:left-6 z-50 p-2.5 sm:p-3 rounded-full shadow-lg transition-transform hover:scale-105 active:scale-95 flex items-center justify-center opacity-80 hover:opacity-100 cursor-pointer"
-                style={{ backgroundColor: activeTheme.primary, color: activeTheme.bg }}
-                title="Open Command Palette"
-            >
-                <Terminal className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
+            {!isZenHidden && (
+                <button
+                    key="terminal-button-mobile"
+                    onClick={() => setIsSearchOpen(true)}
+                    className="fixed lg:hidden bottom-3 sm:bottom-6 left-3 sm:left-6 z-50 p-2.5 sm:p-3 rounded-full shadow-lg transition-transform hover:scale-105 active:scale-95 flex items-center justify-center opacity-80 hover:opacity-100 cursor-pointer"
+                    style={{ backgroundColor: activeTheme.primary, color: activeTheme.bg }}
+                    title="Open Command Palette"
+                >
+                    <Terminal className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
+            )}
 
         </div >
     );

@@ -5,6 +5,8 @@ export type GameMode = "time" | "words" | "quote" | "zen" | "custom";
 export type GameConfig = 15 | 30 | 60 | 120 | 10 | 25 | 50 | 100 | number;
 export type Language = "english" | "khmer";
 export type Theme = "codex" | "cyberpunk" | "dracula" | "retro" | "nord" | "monokai" | "solarized" | "tokyonight";
+export type CustomTextMode = "simple" | "repeat" | "shuffle" | "random";
+export type CustomTextLimitMode = "none" | "word" | "time" | "section";
 
 export type KeymapMode = "off" | "static" | "react" | "next";
 export type KeymapStyle = "staggered" | "alice" | "matrix" | "split" | "split_matrix" | "steno" | "steno_matrix";
@@ -71,8 +73,22 @@ interface MonkeyTypeState {
     setTheme: (theme: Theme) => void;
     punctuation: boolean;
     numbers: boolean;
+    customText: string;
+    customTextByLanguage: Record<Language, string>;
+    customTextMode: CustomTextMode;
+    customTextLimitMode: CustomTextLimitMode;
+    customTextLimitValue: number;
+    customTextPipeDelimiter: boolean;
     setPunctuation: (v: boolean) => void;
     setNumbers: (v: boolean) => void;
+    setCustomText: (v: string) => void;
+    setCustomTextForLanguage: (language: Language, v: string) => void;
+    setCustomTextSettings: (settings: Partial<{
+        customTextMode: CustomTextMode;
+        customTextLimitMode: CustomTextLimitMode;
+        customTextLimitValue: number;
+        customTextPipeDelimiter: boolean;
+    }>) => void;
     favoriteThemes: Theme[];
     toggleFavoriteTheme: (theme: Theme) => void;
 
@@ -110,11 +126,13 @@ interface MonkeyTypeState {
     keymapSize: number;
     keymapLayout: string;
     keymapShowTopRow: KeymapShowTopRow;
+    zenMode: boolean;
 
     setShowLiveWpm: (v: boolean) => void;
     setShowLiveAccuracy: (v: boolean) => void;
     setShowLiveTimer: (v: boolean) => void;
     setShowKeyboard: (v: boolean) => void;
+    setZenMode: (v: boolean) => void;
     setKeymapMode: (v: KeymapMode) => void;
     setKeymapStyle: (v: KeymapStyle) => void;
     setKeymapLegendStyle: (v: KeymapLegendStyle) => void;
@@ -174,8 +192,23 @@ export const useMonkeyTypeStore = create<MonkeyTypeState>()(
             setTheme: (theme) => set({ theme }),
             punctuation: false,
             numbers: false,
+            customText: "",
+            customTextByLanguage: { english: "", khmer: "" },
+            customTextMode: "simple",
+            customTextLimitMode: "none",
+            customTextLimitValue: 0,
+            customTextPipeDelimiter: false,
             setPunctuation: (punctuation) => set({ punctuation }),
             setNumbers: (numbers) => set({ numbers }),
+            setCustomText: (customText) => set({ customText }),
+            setCustomTextForLanguage: (language, customTextValue) => set((state) => ({
+                customTextByLanguage: {
+                    ...state.customTextByLanguage,
+                    [language]: customTextValue
+                },
+                ...(language === "english" ? { customText: customTextValue } : {})
+            })),
+            setCustomTextSettings: (settings) => set((state) => ({ ...state, ...settings })),
             favoriteThemes: [],
             toggleFavoriteTheme: (t) => set((state) => ({
                 favoriteThemes: state.favoriteThemes.includes(t)
@@ -245,11 +278,13 @@ export const useMonkeyTypeStore = create<MonkeyTypeState>()(
             keymapSize: 1.0,
             keymapLayout: "qwerty",
             keymapShowTopRow: "always",
+            zenMode: false,
             
             setShowLiveWpm: (v) => set({ showLiveWpm: v }),
             setShowLiveAccuracy: (v) => set({ showLiveAccuracy: v }),
             setShowLiveTimer: (v) => set({ showLiveTimer: v }),
             setShowKeyboard: (v) => set({ showKeyboard: v }),
+            setZenMode: (v) => set({ zenMode: v }),
             setKeymapMode: (v) => set({ keymapMode: v }),
             setKeymapStyle: (v) => set({ keymapStyle: v }),
             setKeymapLegendStyle: (v) => set({ keymapLegendStyle: v }),
@@ -298,6 +333,12 @@ export const useMonkeyTypeStore = create<MonkeyTypeState>()(
                 theme: state.theme,
                 punctuation: state.punctuation,
                 numbers: state.numbers,
+                customText: state.customText,
+                customTextByLanguage: state.customTextByLanguage,
+                customTextMode: state.customTextMode,
+                customTextLimitMode: state.customTextLimitMode,
+                customTextLimitValue: state.customTextLimitValue,
+                customTextPipeDelimiter: state.customTextPipeDelimiter,
                 favoriteThemes: state.favoriteThemes,
                 history: state.history,
                 soundEnabled: state.soundEnabled,
@@ -317,6 +358,7 @@ export const useMonkeyTypeStore = create<MonkeyTypeState>()(
                 keymapSize: state.keymapSize,
                 keymapLayout: state.keymapLayout,
                 keymapShowTopRow: state.keymapShowTopRow,
+                zenMode: state.zenMode,
                 userLevel: state.userLevel,
             }), // Persist settings and history
         }

@@ -6,11 +6,17 @@ import { Footer } from "@/components/Footer";
 import { useMonkeyTypeStore } from "@/hooks/use-monkeytype-store";
 import { THEMES } from "@/constants/themes";
 import { usePathname } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
     const themeName = useMonkeyTypeStore((state) => state.theme);
+    const zenMode = useMonkeyTypeStore((state) => state.zenMode);
+    const isActive = useMonkeyTypeStore((state) => state.isActive);
+    const isFinished = useMonkeyTypeStore((state) => state.isFinished);
     const activeTheme = THEMES[themeName] || THEMES.codex;
     const pathname = usePathname();
+
+    const isZenHidden = zenMode && isActive && !isFinished;
 
 
     // Check if current route is an admin route or auth page
@@ -28,11 +34,39 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             style={{ backgroundColor: activeTheme.bg }}
             suppressHydrationWarning={true}
         >
-            <Header activeTheme={activeTheme} />
+            <AnimatePresence>
+                {!isZenHidden && (
+                    <motion.div
+                        key="header-animation"
+                        initial={{ opacity: 1, y: 0 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.13, ease: "easeInOut" }}
+                        className="shrink-0"
+                    >
+                        <Header activeTheme={activeTheme} />
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar" suppressHydrationWarning={true}>
                 {children}
             </div>
-            {!isAuthPage && <Footer />}
+
+            <AnimatePresence>
+                {!isZenHidden && !isAuthPage && (
+                    <motion.div
+                        key="footer-animation"
+                        initial={{ opacity: 1, y: 0 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.13, ease: "easeInOut" }}
+                        className="shrink-0"
+                    >
+                        <Footer />
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

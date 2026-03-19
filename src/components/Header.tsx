@@ -15,6 +15,7 @@ import Link from "next/link";
 import { signIn, useSession } from "next-auth/react";
 import { THEMES } from "@/constants/themes";
 import { getNotifications } from "@/app/actions/notifications";
+import { useMonkeyTypeStore } from "@/hooks/use-monkeytype-store";
 
 interface HeaderProps {
     activeTheme: typeof THEMES.codex;
@@ -24,6 +25,14 @@ export function Header({ activeTheme }: HeaderProps) {
     const { status } = useSession();
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
     const [hasUnread, setHasUnread] = useState(false);
+    const { setIsFinished, setIsActive, resetLiveState, mode, config, customTextLimitValue, customTextLimitMode } = useMonkeyTypeStore();
+
+    const handleHomeClick = () => {
+        const defaultTime = mode === "time"
+            ? (config as number)
+            : (mode === "custom" && customTextLimitMode === "time" && customTextLimitValue > 0 ? customTextLimitValue : 30);
+        resetLiveState(defaultTime);
+    };
 
     const checkUnread = async () => {
         const res = await getNotifications();
@@ -45,7 +54,7 @@ export function Header({ activeTheme }: HeaderProps) {
                 <div className="flex w-full max-w-[var(--content-max-w)] mx-auto items-center justify-between px-1 sm:px-4">
                     {/* Left Group: Logo + Navigation Icons */}
                     <div className="flex flex-wrap items-center gap-4 sm:gap-6 w-full">
-                        <Link href="/" className="flex items-center gap-1 sm:gap-2 group cursor-pointer pl-1 font-roboto">
+                        <Link href="/" onClick={handleHomeClick} className="flex items-center gap-1 sm:gap-2 group cursor-pointer pl-1 font-roboto">
                             <Type className="w-6 h-6 md:w-8 md:h-8 transition-transform group-hover:scale-110" style={{ color: activeTheme.primary }} />
                             <h1 className="text-xl sm:text-2xl md:text-[32px] tracking-tight font-bold ml-0 relative" style={{ color: activeTheme.textDim }}>
                                 <span style={{ color: activeTheme.text }}>type</span>flow
@@ -54,7 +63,7 @@ export function Header({ activeTheme }: HeaderProps) {
 
                         {/* Primary Navigation Icons (Monkeytype Style) */}
                         <div className="flex items-center gap-1 sm:gap-2">
-                            <Link href="/">
+                            <Link href="/" onClick={handleHomeClick}>
                                 <motion.div
                                     whileHover={{ scale: 1.1 }}
                                     whileTap={{ scale: 0.95 }}
