@@ -36,7 +36,7 @@ export function Footer() {
     ];
 
     return (
-        <footer className="w-full py-6 md:py-8 px-4 md:px-[180px] mt-auto transition-all duration-500">
+        <footer className="w-full py-6 md:py-8 px-4 md:px-[180px] mt-auto transition-all duration-500" suppressHydrationWarning={true}>
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-0">
                 {/* Socials & Support */}
                 <div className="flex flex-wrap justify-center items-center gap-4 md:gap-6">
@@ -97,12 +97,12 @@ export function Footer() {
                             backgroundColor: `${activeTheme.bgAlt}50`
                         }}
                     >
-                        <div className="flex items-center gap-1.5 relative z-10">
-                            <span className="relative flex h-1 w-1 md:h-1.5 md:w-1.5">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: activeTheme.primary }}></span>
-                                <span className="relative inline-flex rounded-full h-1 w-1 md:h-1.5 md:w-1.5" style={{ backgroundColor: activeTheme.primary }}></span>
+                        <div className="flex items-center gap-1.5 relative z-10" suppressHydrationWarning={true}>
+                            <span className="relative flex h-1 w-1 md:h-1.5 md:w-1.5" suppressHydrationWarning={true}>
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: activeTheme.primary }} suppressHydrationWarning={true}></span>
+                                <span className="relative inline-flex rounded-full h-1 w-1 md:h-1.5 md:w-1.5" style={{ backgroundColor: activeTheme.primary }} suppressHydrationWarning={true}></span>
                             </span>
-                            <span className="text-[8px] md:text-[10px] font-mono font-black uppercase tracking-[0.1em] md:tracking-[0.15em] transition-all group-hover:text-current">
+                            <span className="text-[8px] md:text-[10px] font-mono font-black uppercase tracking-[0.1em] md:tracking-[0.15em] transition-all group-hover:text-current" suppressHydrationWarning={true}>
                                 v{APP_VERSION}
                             </span>
                         </div>

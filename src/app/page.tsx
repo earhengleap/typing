@@ -506,6 +506,44 @@ export default function MonkeyTypePage() {
     const selectedIndex = useMonkeyTypeStore(state => state.selectedIndex);
     const activeCommandGroup = useMonkeyTypeStore(state => state.activeCommandGroup);
 
+    // -- Persistent Audio Engine --
+    const audioCtxRef = useRef<AudioContext | null>(null);
+    const masterGainRef = useRef<GainNode | null>(null);
+    const audioBuffersRef = useRef<{ [url: string]: AudioBuffer }>({});
+
+    // Pre-load audio samples
+    useEffect(() => {
+        const loadSamples = async () => {
+            const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext) as typeof AudioContext;
+            const ctx = new AudioContextClass();
+            audioCtxRef.current = ctx;
+
+            const mg = ctx.createGain();
+            mg.connect(ctx.destination);
+            masterGainRef.current = mg;
+
+            // Load NK Creams
+            for (const url of NK_CREAMS_SOUNDS) {
+                try {
+                    const response = await fetch(url);
+                    const arrayBuffer = await response.arrayBuffer();
+                    const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+                    audioBuffersRef.current[url] = audioBuffer;
+                } catch (e) {
+                    console.error("Failed to load audio sample:", url, e);
+                }
+            }
+        };
+
+        loadSamples().catch(console.error);
+
+        return () => {
+            if (audioCtxRef.current) {
+                audioCtxRef.current.close().catch(() => {});
+            }
+        };
+    }, []);
+
     const {
         setIsActive, setIsFinished, setTimeLeft, setStats, setChartData, resetLiveState, addHistory,
         setMode, setConfig, setLanguage, setTheme, setIsWrongKeyboardLayout, setShowKeyboard, setSettings, toggleFavoriteTheme,
@@ -542,16 +580,19 @@ export default function MonkeyTypePage() {
         const type = forceType || soundType;
 
         try {
-            const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext) as typeof AudioContext;
-            const audioCtx = new AudioContextClass();
-            const masterGain = audioCtx.createGain();
-            masterGain.connect(audioCtx.destination);
-            
-            // Use overrideVolume if provided, otherwise use global soundVolume
-            const effectiveVolume = overrideVolume !== undefined ? overrideVolume : soundVolume;
-            masterGain.gain.setValueAtTime(effectiveVolume * 25.0, audioCtx.currentTime); // Scaled volume
+            if (!audioCtxRef.current) return;
+            const audioCtx = audioCtxRef.current;
+            const masterGain = masterGainRef.current;
+            if (!masterGain) return;
+
+            // Resume context if suspended (autoplay policy)
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
 
             const now = audioCtx.currentTime;
+            const effectiveVolume = overrideVolume !== undefined ? overrideVolume : soundVolume;
+            masterGain.gain.setValueAtTime(effectiveVolume * 25.0, now);
 
             const playMechanical = (freq: number, decay: number, noiseAmt: number = 0.5) => {
                 const osc = audioCtx.createOscillator();
@@ -684,10 +725,14 @@ export default function MonkeyTypePage() {
                     break;
                 }
                 case 'nk_creams': {
-                    const randomSound = NK_CREAMS_SOUNDS[Math.floor(Math.random() * NK_CREAMS_SOUNDS.length)];
-                    const audio = new Audio(randomSound);
-                    audio.volume = soundVolume;
-                    audio.play().catch(() => {});
+                    const randomUrl = NK_CREAMS_SOUNDS[Math.floor(Math.random() * NK_CREAMS_SOUNDS.length)];
+                    const buffer = audioBuffersRef.current[randomUrl];
+                    if (buffer) {
+                        const source = audioCtx.createBufferSource();
+                        source.buffer = buffer;
+                        source.connect(masterGain);
+                        source.start(now);
+                    }
                     break;
                 }
                 case 'stone': playMechanical(80, 0.15, 0.4); break;
@@ -1652,6 +1697,16 @@ export default function MonkeyTypePage() {
             list.push({ id: "group-keymap-size", label: "Keymap Size...", category: "Keyboard", icon: <LucideKeyboard className="w-4 h-4 opacity-70" />, action: () => { setActiveCommandGroup('keymap-size'); setSelectedIndex(0); setSearchQuery(""); } });
             list.push({ id: "group-keymap-layout", label: "Keymap Layout...", category: "Keyboard", icon: <LucideKeyboard className="w-4 h-4 opacity-70" />, action: () => { setActiveCommandGroup('keymap-layout'); setSelectedIndex(0); setSearchQuery(""); } });
             list.push({ id: "group-keymap-toprow", label: "Keymap Show Top Row...", category: "Keyboard", icon: <LucideKeyboard className="w-4 h-4 opacity-70" />, action: () => { setActiveCommandGroup('keymap-toprow'); setSelectedIndex(0); setSearchQuery(""); } });
+
+            // Direct Sound Access
+            list.push({ 
+                id: "sound-nk_creams-direct", 
+                label: "sound > nk creams", 
+                category: "Sound", 
+                icon: <Music className="w-4 h-4 opacity-70" />, 
+                isActive: soundType === 'nk_creams',
+                action: () => { setSettings({ soundType: 'nk_creams', soundEnabled: true }); setIsSearchOpen(false); } 
+            });
         } else if (activeCommandGroup === 'sound-click') {
             // Click Sounds Sub-menu
             const soundTypes = [

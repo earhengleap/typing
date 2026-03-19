@@ -56,7 +56,7 @@ export function UserMenu() {
     };
 
     if (status === "loading") {
-        return <div className="w-8 h-8 rounded-full animate-pulse opacity-20" style={{ backgroundColor: activeTheme.text }} />;
+        return <div className="w-8 h-8 rounded-full animate-pulse opacity-20" style={{ backgroundColor: activeTheme.text }} suppressHydrationWarning={true} />;
     }
 
     if (status === "unauthenticated") {
@@ -77,6 +77,7 @@ export function UserMenu() {
             className="relative"
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
+            suppressHydrationWarning={true}
         >
             <button
                 className="flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer group hover:scale-[1.02]"
@@ -119,6 +120,7 @@ export function UserMenu() {
                             backgroundColor: activeTheme.bg,
                             borderColor: activeTheme.bgAlt,
                         }}
+                        suppressHydrationWarning={true}
                     >
 
                         {/* Menu Items */}
